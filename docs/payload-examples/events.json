@@ -1,0 +1,33 @@
+{
+  "events": [
+    {
+      "id": "evt_20260303_001",
+      "company": "Stripe",
+      "source": "rss",
+      "source_url": "https://stripe.com/blog/modular-pricing",
+      "title": "Stripe launches modular enterprise pricing",
+      "summary": "Enterprise customers can now mix per-seat billing with AI usage tiers.",
+      "tags": ["pricing", "product"],
+      "primary_tag": "pricing",
+      "impact_score": 4,
+      "sentiment": "positive",
+      "fetched_at": "2026-03-03T17:45:12Z",
+      "published_at": "2026-03-03T17:30:00Z"
+    },
+    {
+      "id": "evt_20260303_002",
+      "company": "Coinbase",
+      "source": "sec",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1679788/0001628280-24-007654-index.htm",
+      "title": "Coinbase hires ex-CFTC attorney as Chief Policy Officer",
+      "summary": "Executive hire to expand Washington regulatory office.",
+      "tags": ["regulatory", "leadership"],
+      "primary_tag": "regulatory",
+      "impact_score": 5,
+      "sentiment": "neutral",
+      "fetched_at": "2026-03-03T17:50:01Z",
+      "published_at": "2026-03-03T17:35:00Z"
+    }
+  ],
+  "next_cursor": "20260303T175001Z"
+}

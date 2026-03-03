@@ -1,0 +1,26 @@
+{
+  "collectors": {
+    "flash_sec": {
+      "last_run": "2026-03-03T20:25:00Z",
+      "success": true,
+      "new_records": 6,
+      "latency_ms": 1834
+    },
+    "signal_foundry": {
+      "last_run": "2026-03-03T20:20:00Z",
+      "success": true,
+      "new_records": 12,
+      "latency_ms": 2420
+    }
+  },
+  "notifier": {
+    "last_digest": "2026-03-03T20:30:05Z",
+    "telegram": "sent",
+    "email": "skipped",
+    "last_error": null
+  },
+  "database": {
+    "status": "healthy",
+    "latency_ms": 12
+  }
+}

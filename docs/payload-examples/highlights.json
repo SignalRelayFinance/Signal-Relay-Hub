@@ -1,0 +1,22 @@
+{
+  "highlights": [
+    {
+      "ticker": "CRWD",
+      "title": "CrowdStrike raises FY guidance after AI contract wins",
+      "catalyst": "guidance",
+      "score": 5.2,
+      "summary": "FY26 revenue guidance raised $180M after multi-year AI sensor deal.",
+      "link": "https://www.sec.gov/Archives/edgar/data/0001535527/000153552726000123-index.htm",
+      "suggested_copy": "CRWD just raised FY guidance on the back of a big AI federal deal. Watch the open tomorrow."
+    },
+    {
+      "ticker": "COIN",
+      "title": "Coinbase hires ex-CFTC attorney as Chief Policy Officer",
+      "catalyst": "regulatory",
+      "score": 5.0,
+      "summary": "New hire to lead Washington policy shop; signals offensive move in US regulation.",
+      "link": "https://www.sec.gov/Archives/edgar/data/1679788/0001628280-24-007654-index.htm",
+      "suggested_copy": "COIN beefing up DC firepower—ex-CFTC counsel now leading policy."
+    }
+  ]
+}
