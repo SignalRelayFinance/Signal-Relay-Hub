@@ -2,8 +2,15 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { getStripe } from '@/lib/stripe';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
-  const stripe = getStripe();
+  let stripe;
+  try {
+    stripe = getStripe();
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {

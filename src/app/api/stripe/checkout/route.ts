@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
-  const stripe = getStripe();
+  let stripe;
+  try {
+    stripe = getStripe();
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 
   const priceId = process.env.STRIPE_PRICE_ID;
   if (!priceId) {
