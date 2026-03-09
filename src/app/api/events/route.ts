@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchEvents } from '@/lib/signal-store';
 
-export async function GET() {
-  return NextResponse.json({
-    events: [
-      {
-        id: 'evt_demo_1',
-        ts: new Date().toISOString(),
-        type: 'demo',
-        title: 'Demo event (wire backend to replace this)',
-        body: { note: 'Implement this endpoint or set NEXT_PUBLIC_SIGNAL_API_BASE_URL.' },
-      },
-    ],
-  });
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const limitParam = searchParams.get('limit');
+  const limit = limitParam ? Math.min(parseInt(limitParam, 10) || 50, 200) : 50;
+  const since = searchParams.get('since') ?? undefined;
+  const tag = searchParams.get('tag') ?? undefined;
+
+  const payload = await fetchEvents({ limit, since, tag });
+
+  return NextResponse.json(payload);
 }

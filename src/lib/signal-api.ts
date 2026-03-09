@@ -1,19 +1,4 @@
-export type SignalEvent = {
-  id: string;
-  ts: string; // ISO
-  source?: string;
-  type: string;
-  title?: string;
-  body?: unknown;
-};
-
-export type DigestItem = {
-  id: string;
-  ts: string; // ISO
-  title: string;
-  summary: string;
-  highlights?: string[];
-};
+import { DailyDigest, Highlight, SignalEvent, StatusPayload } from '@/lib/types';
 
 const baseUrl = process.env.NEXT_PUBLIC_SIGNAL_API_BASE_URL?.replace(/\/$/, '') || '';
 
@@ -25,31 +10,36 @@ function url(path: string) {
 export async function fetchStatus() {
   const res = await fetch(url('/api/status'), { cache: 'no-store' });
   if (!res.ok) throw new Error(`status failed: ${res.status}`);
-  return (await res.json()) as { ok: boolean; now: string };
+  return (await res.json()) as StatusPayload;
 }
 
-export async function fetchEvents(params?: { limit?: number }) {
+export async function fetchEvents(params?: { limit?: number; since?: string; tag?: string }) {
   const qp = new URLSearchParams();
   if (params?.limit) qp.set('limit', String(params.limit));
+  if (params?.since) qp.set('since', params.since);
+  if (params?.tag) qp.set('tag', params.tag);
   const res = await fetch(url(`/api/events${qp.size ? `?${qp}` : ''}`), {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`events failed: ${res.status}`);
-  return (await res.json()) as { events: SignalEvent[] };
+  return (await res.json()) as { events: SignalEvent[]; next_cursor?: string };
 }
 
-export async function fetchDigest(params?: { limit?: number }) {
+export async function fetchDigest(params?: { date?: string }) {
   const qp = new URLSearchParams();
-  if (params?.limit) qp.set('limit', String(params.limit));
+  if (params?.date) qp.set('date', params.date);
   const res = await fetch(url(`/api/digest${qp.size ? `?${qp}` : ''}`), {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`digest failed: ${res.status}`);
-  return (await res.json()) as { digests: DigestItem[] };
+  return (await res.json()) as DailyDigest;
 }
 
-export async function fetchHighlights() {
-  const res = await fetch(url('/api/highlights'), { cache: 'no-store' });
+export async function fetchHighlights(params?: { limit?: number; min_score?: number }) {
+  const qp = new URLSearchParams();
+  if (params?.limit) qp.set('limit', String(params.limit));
+  if (params?.min_score) qp.set('min_score', String(params.min_score));
+  const res = await fetch(url(`/api/highlights${qp.size ? `?${qp}` : ''}`), { cache: 'no-store' });
   if (!res.ok) throw new Error(`highlights failed: ${res.status}`);
-  return (await res.json()) as { highlights: string[] };
+  return (await res.json()) as { highlights: Highlight[] };
 }
