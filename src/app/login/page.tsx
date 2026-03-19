@@ -14,7 +14,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/feed`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     if (error) setStatus(error.message);
@@ -56,6 +56,11 @@ export default function LoginPage() {
           </button>
 
           {status ? <div className="mt-4 text-sm">{status}</div> : null}
+
+          <div className="mt-8 text-xs text-neutral-500">
+            Magic links redirect through <span className="font-mono">/auth/callback</span> to set
+            cookies.
+          </div>
         </>
       )}
     </div>
