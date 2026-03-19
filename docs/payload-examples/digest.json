@@ -1,0 +1,21 @@
+{
+  "date": "2026-03-03",
+  "markdown": "# SignalFoundry Daily Digest\n\n## Competitive Signals\n- **Stripe** (pricing • impact 4) — Stripe launches modular enterprise pricing [[source]](https://stripe.com/blog/modular-pricing)\n- **Coinbase** (regulatory • impact 5) — Coinbase hires ex-CFTC attorney as Chief Policy Officer [[filing]](https://www.sec.gov/Archives/edgar/data/1679788/0001628280-24-007654-index.htm)\n\n## Regulatory Filings\n- **COIN** — 8-K (score 5.0)\n- **CRWD** — 8-K (score 3.2)\n",
+  "events": [
+    {
+      "company": "Stripe",
+      "primary_tag": "pricing",
+      "impact_score": 4,
+      "title": "Stripe launches modular enterprise pricing",
+      "link": "https://stripe.com/blog/modular-pricing"
+    }
+  ],
+  "filings": [
+    {
+      "ticker": "COIN",
+      "form_type": "8-K",
+      "score": 5,
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/1679788/0001628280-24-007654-index.htm"
+    }
+  ]
+}

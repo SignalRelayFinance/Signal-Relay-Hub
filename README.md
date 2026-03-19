@@ -20,6 +20,15 @@ npm run dev
 
 Open http://localhost:3000
 
+### Sample data
+
+The dashboard ships with JSON fixtures under `docs/payload-examples`. The API routes
+(`GET /api/events`, `/api/digest`, `/api/highlights`, `/api/status`) read from those files
+via `src/lib/signal-store.ts` so the UI renders without a live backend.
+
+Set `SIGNAL_SAMPLE_DIR=/absolute/path/to/your-fixtures` in `.env.local` if you want to
+swap in custom payloads.
+
 ## Pages (MVP scaffold)
 
 - `/` Landing page

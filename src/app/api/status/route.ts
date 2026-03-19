@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { fetchStatus } from '@/lib/signal-store';
 
 export async function GET() {
-  return NextResponse.json({ ok: true, now: new Date().toISOString() });
+  const status = await fetchStatus();
+  return NextResponse.json(status);
 }
