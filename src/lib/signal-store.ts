@@ -149,7 +149,7 @@ export async function fetchHighlights(
   if (isSupabaseConfigured()) {
     const admin = await getSupabaseAdmin();
 
-    let query = admin
+    const query = admin
       .from('sf_events')
       .select('id, company, title, link, primary_tag, sentiment, impact_score')
       .order('impact_score', { ascending: false })
