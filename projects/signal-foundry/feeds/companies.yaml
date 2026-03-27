@@ -1,0 +1,35 @@
+companies:
+  - name: "Palantir"
+    feeds:
+      blogs:
+        - "https://blog.palantir.com/feed"
+
+  - name: "Snowflake"
+    feeds:
+      blogs:
+        - "https://www.snowflake.com/feed/"
+
+  - name: "Databricks"
+    feeds:
+      blogs:
+        - "https://www.databricks.com/feed"
+
+  - name: "Cloudflare"
+    feeds:
+      blogs:
+        - "https://blog.cloudflare.com/rss/"
+
+  - name: "Stripe"
+    feeds:
+      blogs:
+        - "https://stripe.com/blog/feed.rss"
+
+  - name: "OpenAI"
+    feeds:
+      blogs:
+        - "https://openai.com/blog/rss.xml"
+
+  - name: "Anthropic"
+    feeds:
+      blogs:
+        - "https://www.anthropic.com/rss.xml"
