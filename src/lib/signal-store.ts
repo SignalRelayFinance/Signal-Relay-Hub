@@ -23,6 +23,21 @@ function parseDateSafe(value?: string | null) {
   return Number.isNaN(timestamp) ? null : timestamp;
 }
 
+function isSupabaseConfigured() {
+  return (
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !!process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+}
+
+async function getSupabaseAdmin() {
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
+
 export type FetchEventsOptions = {
   limit?: number;
   since?: string;
@@ -31,8 +46,56 @@ export type FetchEventsOptions = {
 
 export async function fetchEvents(options: FetchEventsOptions = {}): Promise<EventsPayload> {
   const { limit = 50, since, tag } = options;
-  const payload = await readJsonFile<EventsPayload>('events.json');
 
+  // Read from Supabase sf_events when configured
+  if (isSupabaseConfigured()) {
+    const admin = await getSupabaseAdmin();
+
+    let query = admin
+      .from('sf_events')
+      .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, normalized_at, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (tag) {
+      query = query.eq('primary_tag', tag.toLowerCase());
+    }
+
+    if (since) {
+      const sinceTimestamp = parseDateSafe(since);
+      if (sinceTimestamp) {
+        query = query.gte('created_at', new Date(sinceTimestamp).toISOString());
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Supabase fetchEvents error:', error);
+      // Fall through to fixture on error
+    } else {
+      const events = (data ?? []).map((row) => ({
+        id: row.id,
+        company: row.company,
+        source: row.source,
+        title: row.title,
+        link: row.link,
+        summary: row.summary,
+        published_at: row.published,
+        primary_tag: row.primary_tag,
+        tags: row.tags ?? [],
+        sentiment: row.sentiment,
+        impact_score: row.impact_score,
+        confidence: row.confidence,
+        fetched_at: row.fetched_at ?? row.created_at,
+      }));
+
+      return { events, next_cursor: null };
+    }
+  }
+
+  // Fallback: fixture file
+  const payload = await readJsonFile<EventsPayload>('events.json');
   let events = payload.events ?? [];
 
   const sinceTimestamp = parseDateSafe(since);
@@ -67,10 +130,8 @@ export async function fetchDigest(date?: string): Promise<DailyDigest> {
       if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
         throw error;
       }
-      // fall through to default file
     }
   }
-
   return readJsonFile<DailyDigest>('digest.json');
 }
 
@@ -83,13 +144,38 @@ export async function fetchHighlights(
   options: FetchHighlightsOptions = {},
 ): Promise<Highlight[]> {
   const { limit = 5, minScore } = options;
+
+  // Read highlights from Supabase when configured
+  if (isSupabaseConfigured()) {
+    const admin = await getSupabaseAdmin();
+
+    let query = admin
+      .from('sf_events')
+      .select('id, company, title, link, primary_tag, sentiment, impact_score')
+      .order('impact_score', { ascending: false })
+      .gte('impact_score', minScore ?? 4)
+      .limit(limit);
+
+    const { data, error } = await query;
+
+    if (!error && data) {
+      return data.map((row) => ({
+        id: row.id,
+        company: row.company,
+        title: row.title,
+        link: row.link,
+        tag: row.primary_tag,
+        sentiment: row.sentiment,
+        score: row.impact_score,
+      }));
+    }
+  }
+
   const payload = await readJsonFile<HighlightsPayload>('highlights.json');
   let highlights = payload.highlights ?? [];
-
   if (typeof minScore === 'number') {
     highlights = highlights.filter((highlight) => highlight.score >= minScore);
   }
-
   return highlights.slice(0, limit);
 }
 
