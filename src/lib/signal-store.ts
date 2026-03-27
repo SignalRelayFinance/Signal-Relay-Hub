@@ -145,33 +145,7 @@ export async function fetchHighlights(
   options: FetchHighlightsOptions = {},
 ): Promise<Highlight[]> {
   const { limit = 5, minScore } = options;
-
-  // Read highlights from Supabase when configured
-  if (isSupabaseConfigured()) {
-    const admin = await getSupabaseAdmin();
-
-    const query = admin
-      .from('sf_events')
-      .select('id, company, title, link, primary_tag, sentiment, impact_score')
-      .order('impact_score', { ascending: false })
-      .gte('impact_score', minScore ?? 4)
-      .limit(limit);
-
-    const { data, error } = await query;
-
-    if (!error && data) {
-      return data.map((row) => ({
-        id: row.id,
-        company: row.company,
-        title: row.title,
-        link: row.link,
-        tag: row.primary_tag,
-        sentiment: row.sentiment,
-        score: row.impact_score,
-      }));
-    }
-  }
-
+  
   const payload = await readJsonFile<HighlightsPayload>('highlights.json');
   let highlights = payload.highlights ?? [];
   if (typeof minScore === 'number') {
