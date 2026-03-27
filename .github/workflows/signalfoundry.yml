@@ -1,0 +1,59 @@
+name: SignalFoundry Pipeline
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Max events to collect (0 = unlimited)'
+        required: false
+        default: '0'
+      dry_run:
+        description: 'Skip Supabase push (true/false)'
+        required: false
+        default: 'false'
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: projects/signal-foundry
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: projects/signal-foundry/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run collect → normalize → digest
+        run: |
+          python src/cli.py pipeline --limit ${{ github.event.inputs.limit || '0' }}
+
+      - name: Push events to Supabase
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          STAMP=$(date -u +%Y%m%d)
+          python src/supabase_push.py --stamp $STAMP
+
+      - name: Upload digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ github.run_id }}
+          path: projects/signal-foundry/data/digest-*.md
+          retention-days: 7
+          if-no-files-found: warn
