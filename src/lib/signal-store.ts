@@ -74,21 +74,22 @@ export async function fetchEvents(options: FetchEventsOptions = {}): Promise<Eve
       console.error('Supabase fetchEvents error:', error);
       // Fall through to fixture on error
     } else {
-      const events = (data ?? []).map((row) => ({
-        id: row.id,
-        company: row.company,
-        source: row.source,
-        title: row.title,
-        link: row.link,
-        summary: row.summary,
-        published_at: row.published,
-        primary_tag: row.primary_tag,
-        tags: row.tags ?? [],
-        sentiment: row.sentiment,
-        impact_score: row.impact_score,
-        confidence: row.confidence,
-        fetched_at: row.fetched_at ?? row.created_at,
-      }));
+    const events = (data ?? []).map((row) => ({
+  id: row.id,
+  company: row.company,
+  source: row.source,
+  source_url: row.link,
+  title: row.title,
+  link: row.link,
+  summary: row.summary,
+  published_at: row.published,
+  primary_tag: row.primary_tag,
+  tags: row.tags ?? [],
+  sentiment: row.sentiment,
+  impact_score: row.impact_score,
+  confidence: row.confidence,
+  fetched_at: row.fetched_at ?? row.created_at,
+}));
 
       return { events, next_cursor: null };
     }
