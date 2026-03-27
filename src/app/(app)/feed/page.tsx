@@ -1,4 +1,4 @@
-import { fetchEvents, fetchHighlights } from '@/lib/signal-api';
+import { fetchEvents, fetchHighlights } from '@/lib/signal-store';
 import type { Highlight, SignalEvent } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -63,12 +63,12 @@ export default async function LiveFeedPage() {
   try {
     const [ev, hi] = await Promise.all([
       fetchEvents({ limit: 25 }),
-      fetchHighlights({ limit: 5, min_score: 3 }),
+      fetchHighlights({ limit: 5 }),
     ]);
     events = ev.events;
-    highlights = hi.highlights;
-  } catch {
-    // backend not wired yet
+    highlights = hi;
+  } catch (err) {
+    console.error('feed page error:', err);
   }
 
   return (
@@ -76,21 +76,18 @@ export default async function LiveFeedPage() {
       <section>
         <h1 className="text-2xl font-semibold">Live Feed</h1>
         <p className="mt-2 text-sm text-neutral-600">
-          Pulling from /api/events (via NEXT_PUBLIC_SIGNAL_API_BASE_URL if set).
+          Live signals from SEC filings and competitive intelligence.
         </p>
-
         <div className="mt-6 space-y-3">
           {events.length === 0 ? (
             <div className="rounded-md border p-4 text-sm text-neutral-600">
-              No events yet (API not wired). Add NEXT_PUBLIC_SIGNAL_API_BASE_URL and implement
-              /api/events.
+              No events yet.
             </div>
           ) : (
             events.map((event) => <EventCard key={event.id} event={event} />)
           )}
         </div>
       </section>
-
       <aside>
         <h2 className="text-lg font-semibold">Highlights</h2>
         <div className="mt-4 space-y-2">
