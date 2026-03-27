@@ -47,50 +47,42 @@ export type FetchEventsOptions = {
 export async function fetchEvents(options: FetchEventsOptions = {}): Promise<EventsPayload> {
   const { limit = 50, since, tag } = options;
 
-  // Read from Supabase sf_events when configured
   if (isSupabaseConfigured()) {
     const admin = await getSupabaseAdmin();
+    const sinceTimestamp = parseDateSafe(since);
 
-    let query = admin
+    const baseQuery = admin
       .from('sf_events')
-      .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, normalized_at, created_at')
+      .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, created_at')
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (tag) {
-      query = query.eq('primary_tag', tag.toLowerCase());
-    }
+    const taggedQuery = tag ? baseQuery.eq('primary_tag', tag.toLowerCase()) : baseQuery;
+    const finalQuery = sinceTimestamp
+      ? taggedQuery.gte('created_at', new Date(sinceTimestamp).toISOString())
+      : taggedQuery;
 
-    if (since) {
-      const sinceTimestamp = parseDateSafe(since);
-      if (sinceTimestamp) {
-        query = query.gte('created_at', new Date(sinceTimestamp).toISOString());
-      }
-    }
-
-    const { data, error } = await query;
+    const { data, error } = await finalQuery;
 
     if (error) {
       console.error('Supabase fetchEvents error:', error);
-      // Fall through to fixture on error
     } else {
-    const events = (data ?? []).map((row) => ({
-  id: row.id,
-  company: row.company,
-  source: row.source,
-  source_url: row.link,
-  title: row.title,
-  link: row.link,
-  summary: row.summary,
-  published_at: row.published,
-  primary_tag: row.primary_tag,
-  tags: row.tags ?? [],
-  sentiment: row.sentiment,
-  impact_score: row.impact_score,
-  confidence: row.confidence,
-  fetched_at: row.fetched_at ?? row.created_at,
-}));
-
+      const events = (data ?? []).map((row) => ({
+        id: row.id,
+        company: row.company,
+        source: row.source,
+        source_url: row.link,
+        title: row.title,
+        link: row.link,
+        summary: row.summary,
+        published_at: row.published,
+        primary_tag: row.primary_tag,
+        tags: row.tags ?? [],
+        sentiment: row.sentiment,
+        impact_score: row.impact_score,
+        confidence: row.confidence,
+        fetched_at: row.fetched_at ?? row.created_at,
+      }));
       return { events, next_cursor: undefined };
     }
   }
@@ -145,7 +137,7 @@ export async function fetchHighlights(
   options: FetchHighlightsOptions = {},
 ): Promise<Highlight[]> {
   const { limit = 5, minScore } = options;
-  
+
   const payload = await readJsonFile<HighlightsPayload>('highlights.json');
   let highlights = payload.highlights ?? [];
   if (typeof minScore === 'number') {
