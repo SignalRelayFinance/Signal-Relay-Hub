@@ -91,7 +91,7 @@ export async function fetchEvents(options: FetchEventsOptions = {}): Promise<Eve
   fetched_at: row.fetched_at ?? row.created_at,
 }));
 
-      return { events, next_cursor: null };
+      return { events, next_cursor: undefined };
     }
   }
 
