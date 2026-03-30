@@ -40,6 +40,7 @@ async function getSupabaseAdmin() {
 
 export type FetchEventsOptions = {
   limit?: number;
+  offset?: number;
   since?: string;
   tag?: string;
 };
