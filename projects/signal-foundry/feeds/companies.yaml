@@ -36,12 +36,7 @@ companies:
       blogs:
         - "https://stripe.com/blog/feed.rss"
 
-  - name: "Vercel"
-    feeds:
-      blogs:
-        - "https://vercel.com/atom"
-
-  - name: "Supabase"
+   - name: "Supabase"
     feeds:
       blogs:
         - "https://supabase.com/rss.xml"
@@ -88,12 +83,6 @@ companies:
     feeds:
       blogs:
         - "https://cursor.sh/blog/rss.xml"
-
-  # --- SEC / Regulatory ---
-  - name: "SEC EDGAR"
-    feeds:
-      blogs:
-        - "https://efts.sec.gov/LATEST/search-index?q=%228-K%22&dateRange=custom&startdt=2026-01-01&forms=8-K&hits.hits._source.period_of_report=true&_source=period_of_report,display_names,file_date,form_type,biz_location,inc_states&hits.hits.total=true&hits.hits.highlight=true&hits.hits._source=true"
 
   - name: "SEC Press Releases"
     feeds:
