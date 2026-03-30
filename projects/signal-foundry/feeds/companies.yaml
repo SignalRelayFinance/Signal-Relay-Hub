@@ -1,5 +1,4 @@
 companies:
-  # --- AI & Tech ---
   - name: "OpenAI"
     feeds:
       blogs:
@@ -25,7 +24,6 @@ companies:
       blogs:
         - "https://mistral.ai/news/rss"
 
-  # --- Cloud & Infrastructure ---
   - name: "Cloudflare"
     feeds:
       blogs:
@@ -36,12 +34,11 @@ companies:
       blogs:
         - "https://stripe.com/blog/feed.rss"
 
-   - name: "Supabase"
+  - name: "Supabase"
     feeds:
       blogs:
         - "https://supabase.com/rss.xml"
 
-  # --- Fintech & Trading ---
   - name: "Coinbase"
     feeds:
       blogs:
@@ -57,7 +54,6 @@ companies:
       blogs:
         - "https://blog.revolut.com/rss/"
 
-  # --- SaaS & Enterprise ---
   - name: "Notion"
     feeds:
       blogs:
@@ -73,7 +69,6 @@ companies:
       blogs:
         - "https://www.figma.com/blog/rss/"
 
-  # --- Developer Tools ---
   - name: "GitHub"
     feeds:
       blogs:
