@@ -1,5 +1,5 @@
 import Link from 'next/link';
-
+/* eslint-disable react/no-unescaped-entities */
 export default function LandingPage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-14">
