@@ -68,7 +68,7 @@ export default async function AccountSettingsPage() {
             <div className="mt-2 space-y-2">
               <div className="text-sm text-neutral-600">Connect your Telegram to receive push alerts when new signals drop.</div>
               <ol className="mt-3 space-y-1 text-sm text-neutral-600 list-decimal list-inside">
-                <li>Open Telegram and search for your Signal Relay Hub bot</li>
+                <li>Open Telegram and <a href="https://t.me/signalrelayhub_bot" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">click here to open the bot</a></li>
                 <li>Send it this message:</li>
               </ol>
               <div className="mt-2 rounded bg-neutral-100 p-2 font-mono text-xs text-neutral-700">/connect {user?.email}</div>
