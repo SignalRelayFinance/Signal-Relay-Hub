@@ -51,11 +51,15 @@ export async function fetchEvents(options: FetchEventsOptions = {}): Promise<Eve
     const admin = await getSupabaseAdmin();
     const sinceTimestamp = parseDateSafe(since);
 
-    const baseQuery = admin
-      .from('sf_events')
-      .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, created_at')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+   const thirtyDaysAgo = new Date();
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+const baseQuery = admin
+  .from('sf_events')
+  .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, created_at')
+  .gte('created_at', thirtyDaysAgo.toISOString())
+  .order('created_at', { ascending: false })
+  .limit(limit);
 
     const taggedQuery = tag ? baseQuery.eq('primary_tag', tag.toLowerCase()) : baseQuery;
     const finalQuery = sinceTimestamp
