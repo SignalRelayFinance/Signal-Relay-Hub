@@ -86,9 +86,20 @@ def run_collection(limit: int = 0, stamp: str | None = None) -> Path:
         for company in feeds:
             name = company["name"]
             for url in company.get("feeds", {}).get("blogs", []):
-                for entry in fetch_rss(url):
-                    record = normalize_event(name, url, entry)
-                    handle.write(json.dumps(record) + "\n")
+               for entry in fetch_rss(url):
+    # Skip entries older than 90 days
+    published = entry.get("published", "")
+    if published:
+        try:
+            from email.utils import parsedate_to_datetime
+            pub_date = parsedate_to_datetime(published)
+            pub_date = pub_date.replace(tzinfo=None)
+            if (datetime.utcnow() - pub_date).days > 90:
+                continue
+        except Exception:
+            pass
+    record = normalize_event(name, url, entry)
+    handle.write(json.dumps(record) + "\n")
                     count += 1
                     if limit and count >= limit:
                         break
