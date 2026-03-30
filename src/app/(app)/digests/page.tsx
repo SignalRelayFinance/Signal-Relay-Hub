@@ -52,7 +52,7 @@ export default async function DigestArchivePage() {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <div className="font-semibold">
-                    {date === 'unknown' ? 'Unknown date' : date}
+                    {date === 'unknown' ? 'Unknown date' : new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                     </div>
                     <div className="mt-1 text-sm text-neutral-500">
                       {dayEvents.length} signal{dayEvents.length !== 1 ? 's' : ''} — {companies.join(', ')}{companies.length < allCompanies.length ? '…' : ''}
