@@ -27,7 +27,9 @@ export default async function DigestArchivePage() {
 
   const byDate: Record<string, typeof events> = {};
   for (const event of events ?? []) {
-    const date = (event.published ?? event.fetched_at)?.slice(0, 10) ?? 'unknown';
+    const raw = event.published ?? event.fetched_at;
+    const parsed = raw ? new Date(raw) : null;
+    const date = parsed && !isNaN(parsed.getTime()) ? parsed.toISOString().slice(0, 10) : 'unknown';
     if (!byDate[date]) byDate[date] = [];
     byDate[date]!.push(event);
   }
@@ -52,7 +54,7 @@ export default async function DigestArchivePage() {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <div className="font-semibold">
-                    {date === 'unknown' ? 'Unknown date' : (() => { const [y, m, d] = date.split('-'); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${d} ${months[parseInt(m)-1]} ${y}`; })()}
+                   {date === 'unknown' ? 'Unknown date' : date}
                     </div>
                     <div className="mt-1 text-sm text-neutral-500">
                       {dayEvents.length} signal{dayEvents.length !== 1 ? 's' : ''} — {companies.join(', ')}{companies.length < allCompanies.length ? '…' : ''}
