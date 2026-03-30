@@ -42,7 +42,7 @@ export default function LoginPage() {
         <>
           <label className="mt-6 text-sm font-medium">Email</label>
           <input
-            className="mt-2 rounded-md border px-3 py-2"
+            className="mt-2 rounded-md border px-3 py-2 text-black bg-white"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@domain.com"
