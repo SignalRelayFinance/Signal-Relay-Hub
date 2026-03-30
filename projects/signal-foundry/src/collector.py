@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
@@ -18,6 +19,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 FEEDS_PATH = BASE_DIR / "feeds" / "companies.yaml"
 DATA_DIR = BASE_DIR / "data"
 USER_AGENT = "SignalFoundryCollector/0.1"
+MAX_AGE_DAYS = 90
 
 
 class CollectorError(RuntimeError):
@@ -41,6 +43,17 @@ def fetch_rss(url: str) -> List[Dict[str, Any]]:
             "published": entry.get("published"),
         })
     return entries
+
+
+def is_recent(published: str | None) -> bool:
+    """Return True if the entry was published within MAX_AGE_DAYS days."""
+    if not published:
+        return True  # no date = include it
+    try:
+        pub_date = parsedate_to_datetime(published).replace(tzinfo=None)
+        return (datetime.utcnow() - pub_date).days <= MAX_AGE_DAYS
+    except Exception:
+        return True  # unparseable date = include it
 
 
 def normalize_event(company: str, source: str, entry: Dict[str, Any]) -> Dict[str, Any]:
@@ -86,20 +99,11 @@ def run_collection(limit: int = 0, stamp: str | None = None) -> Path:
         for company in feeds:
             name = company["name"]
             for url in company.get("feeds", {}).get("blogs", []):
-               for entry in fetch_rss(url):
-    # Skip entries older than 90 days
-    published = entry.get("published", "")
-    if published:
-        try:
-            from email.utils import parsedate_to_datetime
-            pub_date = parsedate_to_datetime(published)
-            pub_date = pub_date.replace(tzinfo=None)
-            if (datetime.utcnow() - pub_date).days > 90:
-                continue
-        except Exception:
-            pass
-    record = normalize_event(name, url, entry)
-    handle.write(json.dumps(record) + "\n")
+                for entry in fetch_rss(url):
+                    if not is_recent(entry.get("published")):
+                        continue
+                    record = normalize_event(name, url, entry)
+                    handle.write(json.dumps(record) + "\n")
                     count += 1
                     if limit and count >= limit:
                         break
