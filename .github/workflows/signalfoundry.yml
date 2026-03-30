@@ -57,3 +57,12 @@ jobs:
           path: projects/signal-foundry/data/digest-*.md
           retention-days: 7
           if-no-files-found: warn
+
+      - name: Notify Telegram subscribers
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          PROVISION_WEBHOOK_SECRET: ${{ secrets.PROVISION_WEBHOOK_SECRET }}
+        run: |
+          curl -s -X POST https://signal-relay-hub-flsg.vercel.app/api/telegram/notify \
+            -H "Content-Type: application/json" \
+            -H "x-provision-secret: $PROVISION_WEBHOOK_SECRET"
