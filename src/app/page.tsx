@@ -9,56 +9,93 @@ export default function LandingPage() {
           <Link className="hover:underline" href="/login">
             Login
           </Link>
-          <Link className="rounded-md bg-black px-3 py-2 text-white hover:bg-black/90" href="/feed">
-            Open dashboard
+          <Link className="rounded-md bg-black px-3 py-2 text-white hover:bg-black/90" href="/login">
+            Get started
           </Link>
         </nav>
       </header>
 
-      <main className="mt-14">
+      <main className="mt-20">
+        <div className="inline-flex items-center rounded-full border border-neutral-200 px-3 py-1 text-xs text-neutral-500 mb-6">
+          TradingView covers SEC filings. We cover everything else too.
+        </div>
+
         <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl">
-          Real-time SEC + competitive signals, with digests and self-serve access.
+          Multi-source intel for fintech operators and traders.
         </h1>
+
         <p className="mt-5 max-w-2xl text-pretty text-base text-neutral-600">
-          Multi-tenant dashboard + landing page that surfaces live signals, keeps an archive of
-          digests, and lets customers self-serve via Stripe checkout + API keys.
+          Signal Relay Hub monitors AI labs, fintech companies, regulators, and SEC filings —
+          then pushes what matters to you via Telegram, email, or API. Not a dashboard you have
+          to remember to check.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/login"
-            className="rounded-md bg-black px-4 py-2 text-white hover:bg-black/90"
-          >
-            Get started
+          <Link href="/login" className="rounded-md bg-black px-4 py-2 text-white hover:bg-black/90">
+            Start free trial
           </Link>
-          <Link
-            href="/feed"
-            className="rounded-md border border-neutral-300 px-4 py-2 hover:bg-neutral-50"
-          >
+          <Link href="/feed" className="rounded-md border border-neutral-300 px-4 py-2 hover:bg-neutral-50">
             View live feed
           </Link>
         </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border p-4">
-            <div className="font-medium">Live feed</div>
-            <div className="mt-1 text-sm text-neutral-600">Streaming events + highlights.</div>
-          </div>
-          <div className="rounded-lg border p-4">
-            <div className="font-medium">Digest archive</div>
-            <div className="mt-1 text-sm text-neutral-600">History + searchable summaries.</div>
-          </div>
-          <div className="rounded-lg border p-4">
-            <div className="font-medium">Self-serve</div>
-            <div className="mt-1 text-sm text-neutral-600">
-              Stripe checkout → provision API key.
+        <div className="mt-16 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-lg border p-5">
+            <div className="text-sm font-medium text-neutral-400 mb-2">Multi-source</div>
+            <div className="font-semibold mb-1">Beyond SEC filings</div>
+            <div className="text-sm text-neutral-600">
+              OpenAI, Anthropic, Stripe, Revolut, regulators, and 15+ more sources in one feed —
+              not just 8-K filings.
             </div>
           </div>
+          <div className="rounded-lg border p-5">
+            <div className="text-sm font-medium text-neutral-400 mb-2">Push delivery</div>
+            <div className="font-semibold mb-1">Comes to you</div>
+            <div className="text-sm text-neutral-600">
+              Signals delivered via Telegram or email the moment they drop. No dashboard
+              to babysit.
+            </div>
+          </div>
+          <div className="rounded-lg border p-5">
+            <div className="text-sm font-medium text-neutral-400 mb-2">API access</div>
+            <div className="font-semibold mb-1">Built for developers</div>
+            <div className="text-sm text-neutral-600">
+              Self-serve API key via Stripe checkout. Pipe signals directly into your
+              own stack, alerts, or models.
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-16 rounded-lg border p-6 sm:p-8">
+          <div className="text-sm font-medium text-neutral-400 mb-4">Who it's for</div>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <div className="font-semibold mb-1">Fintech operators</div>
+              <div className="text-sm text-neutral-600">
+                Track competitor pricing moves, product launches, funding rounds, and regulatory
+                shifts before they hit the news cycle.
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold mb-1">Traders and analysts</div>
+              <div className="text-sm text-neutral-600">
+                SEC filings, 8-K alerts, and market-moving signals from the companies that
+                matter — with context, not just raw filings.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-16 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <Link href="/login" className="rounded-md bg-black px-5 py-2.5 text-white hover:bg-black/90">
+            Get started — £45/month
+          </Link>
+          <span className="text-sm text-neutral-500">Cancel anytime. API key provisioned instantly.</span>
         </div>
       </main>
 
       <footer className="mt-auto pt-16 text-xs text-neutral-500">
-        MVP scaffold — auth via Supabase, payments via Stripe.
+        © 2026 Signal Relay Hub. Built for fintech operators and traders.
       </footer>
     </div>
   );
