@@ -42,7 +42,7 @@ export default async function AccountSettingsPage() {
           <div className="mt-1 text-sm text-neutral-600">
             {profile?.is_subscribed ? 'Signal Relay Hub — £45/month' : 'Free (no active subscription)'}
           </div>
-          
+          <a
             href="/api/stripe/checkout"
             className="mt-3 inline-flex rounded-md bg-black px-3 py-2 text-sm text-white hover:bg-black/90"
           >
