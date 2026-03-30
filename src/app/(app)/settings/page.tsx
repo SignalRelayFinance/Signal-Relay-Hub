@@ -11,10 +11,8 @@ export default async function AccountSettingsPage() {
     {
       cookies: {
         getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
+        setAll() {
+          // no-op: cookies cannot be set in a Server Component
         },
       },
     }
@@ -42,7 +40,7 @@ export default async function AccountSettingsPage() {
           <div className="mt-1 text-sm text-neutral-600">
             {profile?.is_subscribed ? 'Signal Relay Hub — £45/month' : 'Free (no active subscription)'}
           </div>
-          <a
+         <a 
             href="/api/stripe/checkout"
             className="mt-3 inline-flex rounded-md bg-black px-3 py-2 text-sm text-white hover:bg-black/90"
           >
