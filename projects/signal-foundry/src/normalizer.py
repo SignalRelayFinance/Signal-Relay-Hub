@@ -108,7 +108,7 @@ def normalize_records(records: List[Dict]) -> List[Dict]:
         if rid in seen:
             continue
         seen.add(rid)
-        blob = " ".join(filter(None, [record.get("title") or "", record.get("summary") or ""])).lower()
+        blob = " ".join(filter(None, [strip_html(record.get("title") or ""), strip_html(record.get("summary") or "")])).lower()
         tags = detect_tags(blob)
         normalized.append(NormalizedEvent(
             record, tags, detect_sentiment(blob), score_impact(tags, blob), confidence_from_record(record)
