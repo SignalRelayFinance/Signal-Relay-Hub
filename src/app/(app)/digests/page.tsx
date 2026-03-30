@@ -1,4 +1,5 @@
 import React from 'react';
+/* eslint-disable react/no-unescaped-entities */
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
