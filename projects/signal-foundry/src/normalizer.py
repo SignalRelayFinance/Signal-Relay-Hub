@@ -56,7 +56,9 @@ class NormalizedEvent:
             "normalized_at": datetime.utcnow().isoformat(),
         })
         return enriched
-
+        
+def strip_html(text: str) -> str:
+    return re.sub(r'<[^>]+>', '', text).strip()
 
 def event_id(record: Dict) -> str:
     basis = record.get("link") or record.get("title") or ""
