@@ -1,19 +1,31 @@
 companies:
-  - name: "Palantir"
+  # --- AI & Tech ---
+  - name: "OpenAI"
     feeds:
       blogs:
-        - "https://blog.palantir.com/feed"
+        - "https://openai.com/blog/rss.xml"
 
-  - name: "Snowflake"
+  - name: "Anthropic"
     feeds:
       blogs:
-        - "https://www.snowflake.com/feed/"
+        - "https://www.anthropic.com/rss.xml"
 
-  - name: "Databricks"
+  - name: "Google DeepMind"
     feeds:
       blogs:
-        - "https://www.databricks.com/feed"
+        - "https://deepmind.google/blog/rss.xml"
 
+  - name: "Meta AI"
+    feeds:
+      blogs:
+        - "https://ai.meta.com/blog/rss/"
+
+  - name: "Mistral"
+    feeds:
+      blogs:
+        - "https://mistral.ai/news/rss"
+
+  # --- Cloud & Infrastructure ---
   - name: "Cloudflare"
     feeds:
       blogs:
@@ -24,12 +36,66 @@ companies:
       blogs:
         - "https://stripe.com/blog/feed.rss"
 
-  - name: "OpenAI"
+  - name: "Vercel"
     feeds:
       blogs:
-        - "https://openai.com/blog/rss.xml"
+        - "https://vercel.com/atom"
 
-  - name: "Anthropic"
+  - name: "Supabase"
     feeds:
       blogs:
-        - "https://www.anthropic.com/rss.xml"
+        - "https://supabase.com/rss.xml"
+
+  # --- Fintech & Trading ---
+  - name: "Coinbase"
+    feeds:
+      blogs:
+        - "https://www.coinbase.com/blog/landing/rss"
+
+  - name: "Robinhood"
+    feeds:
+      blogs:
+        - "https://newsroom.aboutrobinhood.com/feed/"
+
+  - name: "Revolut"
+    feeds:
+      blogs:
+        - "https://blog.revolut.com/rss/"
+
+  # --- SaaS & Enterprise ---
+  - name: "Notion"
+    feeds:
+      blogs:
+        - "https://www.notion.so/blog/rss.xml"
+
+  - name: "Linear"
+    feeds:
+      blogs:
+        - "https://linear.app/changelog/rss.xml"
+
+  - name: "Figma"
+    feeds:
+      blogs:
+        - "https://www.figma.com/blog/rss/"
+
+  # --- Developer Tools ---
+  - name: "GitHub"
+    feeds:
+      blogs:
+        - "https://github.blog/feed/"
+
+  - name: "Cursor"
+    feeds:
+      blogs:
+        - "https://cursor.sh/blog/rss.xml"
+
+  # --- SEC / Regulatory ---
+  - name: "SEC EDGAR"
+    feeds:
+      blogs:
+        - "https://efts.sec.gov/LATEST/search-index?q=%228-K%22&dateRange=custom&startdt=2026-01-01&forms=8-K&hits.hits._source.period_of_report=true&_source=period_of_report,display_names,file_date,form_type,biz_location,inc_states&hits.hits.total=true&hits.hits.highlight=true&hits.hits._source=true"
+
+  - name: "SEC Press Releases"
+    feeds:
+      blogs:
+        - "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&dateb=&owner=include&count=20&output=atom"
