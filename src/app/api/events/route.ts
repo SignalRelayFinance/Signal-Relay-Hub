@@ -4,11 +4,12 @@ import { fetchEvents } from '@/lib/signal-store';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const limitParam = searchParams.get('limit');
-  const limit = limitParam ? Math.min(parseInt(limitParam, 10) || 50, 200) : 50;
+  const offsetParam = searchParams.get('offset');
+  const limit = limitParam ? Math.min(parseInt(limitParam, 10) || 25, 200) : 25;
+  const offset = offsetParam ? parseInt(offsetParam, 10) || 0 : 0;
   const since = searchParams.get('since') ?? undefined;
   const tag = searchParams.get('tag') ?? undefined;
 
-  const payload = await fetchEvents({ limit, since, tag });
-
+  const payload = await fetchEvents({ limit, offset, since, tag });
   return NextResponse.json(payload);
 }
