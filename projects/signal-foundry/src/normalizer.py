@@ -46,6 +46,7 @@ class NormalizedEvent:
 
     def as_dict(self) -> Dict:
         enriched = dict(self.record)
+        enriched["summary"] = strip_html(enriched.get("summary") or "")
         enriched.update({
             "id": event_id(enriched),
             "tags": self.tags,
