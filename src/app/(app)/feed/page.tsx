@@ -25,7 +25,7 @@ function EventCard({ event }: { event: SignalEvent }) {
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <a
-          href={event.link}
+          href={event.source_url}
           target="_blank"
           rel="noopener noreferrer"
           className="font-semibold hover:underline"
