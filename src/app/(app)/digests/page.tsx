@@ -44,9 +44,9 @@ export default async function DigestArchivePage() {
         <div className="mt-8 space-y-6">
           {dates.map((date) => {
             const dayEvents = byDate[date] ?? [];
-            const topTags = [...new Set(dayEvents.map((e) => e.primary_tag).filter(Boolean))].slice(0, 4);
-            const companies = [...new Set(dayEvents.map((e) => e.company).filter(Boolean))].slice(0, 5);
-            const allCompanies = [...new Set(dayEvents.map((e) => e.company))];
+            const topTags = Array.from(new Set(dayEvents.map((e) => e.primary_tag).filter(Boolean))).slice(0, 4);
+            const companies = Array.from(new Set(dayEvents.map((e) => e.company).filter(Boolean))).slice(0, 5);
+            const allCompanies = Array.from(new Set(dayEvents.map((e) => e.company)));
             return (
               <div key={date} className="rounded-lg border p-5">
                 <div className="flex items-center justify-between flex-wrap gap-2">
