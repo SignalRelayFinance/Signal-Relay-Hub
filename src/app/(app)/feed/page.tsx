@@ -1,7 +1,10 @@
-import { fetchEvents, fetchHighlights } from '@/lib/signal-store';
-import type { Highlight, SignalEvent } from '@/lib/types';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { useEffect, useState, useCallback } from 'react';
+import type { SignalEvent } from '@/lib/types';
+
+const TAGS = ['all', 'product', 'regulatory', 'funding', 'pricing', 'security', 'partnership', 'talent', 'general'];
+const PAGE_SIZE = 25;
 
 const sentimentColors: Record<string, string> = {
   positive: 'text-emerald-600',
@@ -11,14 +14,24 @@ const sentimentColors: Record<string, string> = {
 
 function EventCard({ event }: { event: SignalEvent }) {
   return (
-    <div className="rounded-md border p-4">
+    <div className="rounded-md border p-4 hover:border-neutral-400 transition-colors">
       <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-        <span className="font-mono">{new Date(event.published_at).toLocaleString()}</span>
+        <span className="font-mono">
+          {event.published_at && !event.published_at.includes('1970')
+            ? new Date(event.published_at).toLocaleString()
+            : new Date(event.fetched_at ?? '').toLocaleString()}
+        </span>
         <span>• {event.company}</span>
-        <span>• {event.source}</span>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <div className="font-semibold">{event.title}</div>
+        <a
+          href={event.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold hover:underline"
+        >
+          {event.title}
+        </a>
         <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">
           {event.primary_tag}
         </span>
@@ -29,7 +42,9 @@ function EventCard({ event }: { event: SignalEvent }) {
           {event.sentiment}
         </span>
       </div>
-      <p className="mt-2 text-sm text-neutral-700">{event.summary}</p>
+      {event.summary && (
+        <p className="mt-2 text-sm text-neutral-700 line-clamp-2">{event.summary}</p>
+      )}
       <div className="mt-3 flex flex-wrap gap-1 text-xs text-neutral-500">
         {event.tags.map((tag) => (
           <span key={tag} className="rounded bg-neutral-100 px-2 py-0.5">
@@ -41,65 +56,101 @@ function EventCard({ event }: { event: SignalEvent }) {
   );
 }
 
-function HighlightCard({ highlight }: { highlight: Highlight }) {
-  return (
-    <div className="rounded-md border p-3 text-sm">
-      <div className="flex items-center justify-between text-xs text-neutral-500">
-        <span>{highlight.ticker}</span>
-        <span className="text-neutral-600">{highlight.catalyst}</span>
-      </div>
-      <div className="mt-1 font-medium">{highlight.title}</div>
-      <p className="mt-1 text-neutral-600">{highlight.summary}</p>
-      <div className="mt-2 text-xs text-neutral-500">Score {highlight.score}</div>
-      <p className="mt-2 text-neutral-700">{highlight.suggested_copy}</p>
-    </div>
-  );
-}
+export default function LiveFeedPage() {
+  const [events, setEvents] = useState<SignalEvent[]>([]);
+  const [activeTag, setActiveTag] = useState('all');
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-export default async function LiveFeedPage() {
-  let events: SignalEvent[] = [];
-  let highlights: Highlight[] = [];
+  const loadEvents = useCallback(async (tag: string, pageNum: number, replace: boolean) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(pageNum * PAGE_SIZE),
+      });
+      if (tag !== 'all') params.set('tag', tag);
 
-  try {
-    const [ev, hi] = await Promise.all([
-      fetchEvents({ limit: 25 }),
-      fetchHighlights({ limit: 5 }),
-    ]);
-    events = ev.events;
-    highlights = hi;
-  } catch (err) {
-    console.error('feed page error:', err);
+      const res = await fetch(`/api/events?${params}`);
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json() as { events: SignalEvent[] };
+      const newEvents = data.events ?? [];
+
+      setEvents(prev => replace ? newEvents : [...prev, ...newEvents]);
+      setHasMore(newEvents.length === PAGE_SIZE);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setPage(0);
+    loadEvents(activeTag, 0, true);
+  }, [activeTag, loadEvents]);
+
+  function loadMore() {
+    const next = page + 1;
+    setPage(next);
+    loadEvents(activeTag, next, false);
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
-      <section>
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-semibold">Live Feed</h1>
-        <p className="mt-2 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-neutral-600">
           Live signals from SEC filings and competitive intelligence.
         </p>
-        <div className="mt-6 space-y-3">
-          {events.length === 0 ? (
-            <div className="rounded-md border p-4 text-sm text-neutral-600">
-              No events yet.
-            </div>
-          ) : (
-            events.map((event) => <EventCard key={event.id} event={event} />)
-          )}
+      </div>
+
+      {/* Tag filters */}
+      <div className="flex flex-wrap gap-2">
+        {TAGS.map((tag) => (
+          <button
+            key={tag}
+            onClick={() => setActiveTag(tag)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              activeTag === tag
+                ? 'bg-neutral-900 text-white'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            }`}
+          >
+            {tag}
+          </button>
+        ))}
+      </div>
+
+      {/* Events */}
+      <div className="space-y-3">
+        {events.length === 0 && !loading ? (
+          <div className="rounded-md border p-4 text-sm text-neutral-600">
+            No events found{activeTag !== 'all' ? ` for tag: ${activeTag}` : ''}.
+          </div>
+        ) : (
+          events.map((event) => <EventCard key={event.id} event={event} />)
+        )}
+
+        {loading && (
+          <div className="rounded-md border p-4 text-sm text-neutral-500 text-center">
+            Loading...
+          </div>
+        )}
+      </div>
+
+      {/* Load more */}
+      {hasMore && !loading && events.length > 0 && (
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={loadMore}
+            className="rounded-md border px-6 py-2 text-sm font-medium hover:bg-neutral-50 transition-colors"
+          >
+            Load more
+          </button>
         </div>
-      </section>
-      <aside>
-        <h2 className="text-lg font-semibold">Highlights</h2>
-        <div className="mt-4 space-y-2">
-          {highlights.length === 0 ? (
-            <div className="rounded-md border p-4 text-sm text-neutral-600">No highlights yet.</div>
-          ) : (
-            highlights.map((highlight) => (
-              <HighlightCard key={`${highlight.ticker}-${highlight.catalyst}`} highlight={highlight} />
-            ))
-          )}
-        </div>
-      </aside>
+      )}
     </div>
   );
 }
