@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 from datetime import datetime
+import re 
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
@@ -39,7 +40,7 @@ def fetch_rss(url: str) -> List[Dict[str, Any]]:
         entries.append({
             "title": entry.get("title"),
             "link": entry.get("link"),
-            "summary": entry.get("summary", ""),
+            "summary": re.sub(r'<[^>]+>', '', entry.get("summary") or "").strip(),
             "published": entry.get("published"),
         })
     return entries
