@@ -21,13 +21,13 @@ export default async function DigestArchivePage() {
 
   const { data: events } = await supabase
     .from('sf_events')
-    .select('id, title, company, primary_tag, impact_score, published_at, link, summary')
+    .select('id, title, company, primary_tag, impact_score, published, link, summary')
     .order('published_at', { ascending: false })
     .limit(200);
 
   const byDate: Record<string, typeof events> = {};
   for (const event of events ?? []) {
-    const date = event.published_at?.slice(0, 10) ?? 'unknown';
+    const date = event.published?.slice(0, 10) ?? 'unknown';
     if (!byDate[date]) byDate[date] = [];
     byDate[date]!.push(event);
   }
