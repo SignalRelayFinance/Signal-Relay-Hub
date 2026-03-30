@@ -2,10 +2,10 @@
 import React from 'react';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import TelegramTagSelector from '@/components/TelegramTagSelector';
 
 export default async function AccountSettingsPage() {
   const cookieStore = await cookies();
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -16,9 +16,7 @@ export default async function AccountSettingsPage() {
       },
     }
   );
-
   const { data: { user } } = await supabase.auth.getUser();
-
   let profile = null;
   if (user?.email) {
     const { data } = await supabase
@@ -28,13 +26,11 @@ export default async function AccountSettingsPage() {
       .single();
     profile = data;
   }
-
   return (
     <div>
       <h1 className="text-2xl font-semibold">Account Settings</h1>
       <div className="mt-2 text-sm text-neutral-500">{user?.email}</div>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-
         <div className="rounded-md border p-4">
           <div className="font-medium">Plan</div>
           <div className="mt-1 text-sm text-neutral-600">
@@ -44,7 +40,6 @@ export default async function AccountSettingsPage() {
             {profile?.is_subscribed ? 'Manage billing' : 'Subscribe now'}
           </a>
         </div>
-
         <div className="rounded-md border p-4">
           <div className="font-medium">API Key</div>
           {profile?.api_key ? (
@@ -56,13 +51,18 @@ export default async function AccountSettingsPage() {
             <div className="mt-1 text-sm text-neutral-600">Provisioned automatically after subscribing.</div>
           )}
         </div>
-
         <div className="rounded-md border p-4 sm:col-span-2">
           <div className="font-medium">Telegram Alerts</div>
           {profile?.telegram_chat_id ? (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">Connected</span>
-              <span className="text-sm text-neutral-500">You will receive signal alerts via Telegram.</span>
+            <div className="mt-2">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">Connected</span>
+                <span className="text-sm text-neutral-500">Receiving signal alerts via Telegram.</span>
+              </div>
+              <TelegramTagSelector
+                email={user?.email ?? ''}
+                initialTags={profile.telegram_tags ?? ['product', 'regulatory', 'funding', 'pricing', 'security']}
+              />
             </div>
           ) : (
             <div className="mt-2 space-y-2">
@@ -76,7 +76,6 @@ export default async function AccountSettingsPage() {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
