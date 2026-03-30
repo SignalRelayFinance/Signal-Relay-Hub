@@ -52,7 +52,7 @@ export default async function DigestArchivePage() {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <div className="font-semibold">
-                    {date === 'unknown' ? 'Unknown date' : new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                    {date === 'unknown' ? 'Unknown date' : (() => { const [y, m, d] = date.split('-'); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${d} ${months[parseInt(m)-1]} ${y}`; })()}
                     </div>
                     <div className="mt-1 text-sm text-neutral-500">
                       {dayEvents.length} signal{dayEvents.length !== 1 ? 's' : ''} — {companies.join(', ')}{companies.length < allCompanies.length ? '…' : ''}
