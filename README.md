@@ -89,3 +89,8 @@ The scheduled SignalFoundry workflow (`.github/workflows/signalfoundry.yml`) exp
 | `TELEGRAM_BOT_TOKEN` | Bot token for sending Telegram messages. |
 
 Locally, copy `.env.example` → `.env.local` and set the same values (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `TELEGRAM_BOT_TOKEN`, etc.).
+
+## Social drip queue data model
+
+Run `supabase/sql/drip_queue.sql` against your Supabase project to create the
+`drip_queue` table that powers `/drip-queue`.
