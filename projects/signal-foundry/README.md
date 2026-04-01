@@ -48,4 +48,9 @@ Edit `feeds/companies.yaml` to add new companies and RSS URLs.
 ## GitHub Actions
 
 The pipeline runs automatically every 6 hours via `.github/workflows/signalfoundry.yml`.
-Add `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` as GitHub repository secrets.
+Set these repository secrets so the workflow + Telegram notifier can run end-to-end:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_KEY`
+- `PROVISION_WEBHOOK_SECRET`
+- `TELEGRAM_BOT_TOKEN`

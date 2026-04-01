@@ -76,3 +76,16 @@ Tyler mentioned specs/payload examples live at:
 `projects/signal-foundry/docs/API_SPEC.md`
 
 That file is not in this repo yet — add/copy it into `docs/` when available.
+
+## Deployment secrets & GitHub Action
+
+The scheduled SignalFoundry workflow (`.github/workflows/signalfoundry.yml`) expects these secrets:
+
+| Secret | Purpose |
+| --- | --- |
+| `SUPABASE_URL` | Supabase project URL (same as `NEXT_PUBLIC_SUPABASE_URL`). |
+| `SUPABASE_SERVICE_KEY` | Service-role key used for collector push + Telegram webhook. |
+| `PROVISION_WEBHOOK_SECRET` | Shared secret to authorize `/api/telegram/notify`. |
+| `TELEGRAM_BOT_TOKEN` | Bot token for sending Telegram messages. |
+
+Locally, copy `.env.example` → `.env.local` and set the same values (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `TELEGRAM_BOT_TOKEN`, etc.).
