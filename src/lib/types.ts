@@ -68,6 +68,7 @@ export interface NotifierStatus {
   telegram: 'sent' | 'queued' | 'failed' | 'skipped';
   email: 'sent' | 'queued' | 'failed' | 'skipped';
   last_error: string | null;
+  queued_drips?: number;
 }
 
 export interface DatabaseStatus {

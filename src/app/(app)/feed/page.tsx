@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import type { SignalEvent } from '@/lib/types';
+import type { SignalEvent, StatusPayload } from '@/lib/types';
 
 const TAGS = ['all', 'product', 'regulatory', 'funding', 'pricing', 'security', 'partnership', 'talent', 'general'];
 const PAGE_SIZE = 25;
@@ -70,6 +70,7 @@ export default function LiveFeedPage() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [status, setStatus] = useState<StatusPayload | null>(null);
 
   const loadEvents = useCallback(async (tag: string, pageNum: number, replace: boolean) => {
     setLoading(true);
@@ -99,6 +100,23 @@ export default function LiveFeedPage() {
     loadEvents(activeTag, 0, true);
   }, [activeTag, loadEvents]);
 
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted) setStatus(data as StatusPayload);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   function loadMore() {
     const next = page + 1;
     setPage(next);
@@ -109,6 +127,9 @@ export default function LiveFeedPage() {
   const avgImpact = events.length
     ? (events.reduce((sum, e) => sum + (e.impact_score ?? 0), 0) / events.length).toFixed(1)
     : '—';
+  const flashStatus = status?.collectors?.flash_sec;
+  const foundryStatus = status?.collectors?.signal_foundry;
+  const queuedDrips = status?.notifier?.queued_drips ?? 0;
 
   return (
     <div className="space-y-8">
@@ -159,6 +180,32 @@ export default function LiveFeedPage() {
             ))}
           </div>
         </div>
+
+        {status && (
+          <div className="mt-6 grid gap-4 text-sm text-white/80 md:grid-cols-3">
+            <div className="rounded-2xl border border-emerald-300/40 bg-emerald-400/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-emerald-200">Flash SEC collector</div>
+              <div className="mt-2 text-2xl font-semibold text-white">{flashStatus?.new_records ?? '—'}</div>
+              <p className="mt-1 text-xs text-white/70">
+                filings in last 24h • last run {flashStatus?.last_run ? new Date(flashStatus.last_run).toLocaleTimeString() : '—'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-sky-300/40 bg-sky-400/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-sky-200">SignalFoundry RSS</div>
+              <div className="mt-2 text-2xl font-semibold text-white">{foundryStatus?.new_records ?? '—'}</div>
+              <p className="mt-1 text-xs text-white/70">
+                new stories • last run {foundryStatus?.last_run ? new Date(foundryStatus.last_run).toLocaleTimeString() : '—'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-amber-300/40 bg-amber-400/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-amber-200">Delivery queue</div>
+              <div className="mt-2 text-2xl font-semibold text-white">{queuedDrips}</div>
+              <p className="mt-1 text-xs text-white/70">
+                drips waiting • Telegram {status.notifier.telegram}
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="space-y-4">

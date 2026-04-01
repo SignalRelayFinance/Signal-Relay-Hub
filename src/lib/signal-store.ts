@@ -23,18 +23,26 @@ function parseDateSafe(value?: string | null) {
   return Number.isNaN(timestamp) ? null : timestamp;
 }
 
+function getSupabaseServiceKey() {
+  return process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+}
+
 function isSupabaseConfigured() {
   return (
     !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    !!getSupabaseServiceKey()
   );
 }
 
 async function getSupabaseAdmin() {
   const { createClient } = await import('@supabase/supabase-js');
+  const serviceKey = getSupabaseServiceKey();
+  if (!serviceKey) {
+    throw new Error('Supabase service key missing');
+  }
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    serviceKey,
   );
 }
 
@@ -152,5 +160,86 @@ export async function fetchHighlights(
 }
 
 export async function fetchStatus(): Promise<StatusPayload> {
+  if (isSupabaseConfigured()) {
+    const fromSupabase = await fetchStatusFromSupabase();
+    if (fromSupabase) return fromSupabase;
+  }
   return readJsonFile<StatusPayload>('status.json');
+}
+
+async function fetchStatusFromSupabase(): Promise<StatusPayload | null> {
+  try {
+    const admin = await getSupabaseAdmin();
+    const now = Date.now();
+    const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+
+    const dbLatencyStart = Date.now();
+
+    const [secLatest, rssLatest, totalCount, secCount, queueCount] = await Promise.all([
+      admin
+        .from('sf_events')
+        .select('created_at')
+        .ilike('source', '%sec%')
+        .order('created_at', { ascending: false })
+        .limit(1),
+      admin
+        .from('sf_events')
+        .select('created_at')
+        .not('source', 'ilike', '%sec%')
+        .order('created_at', { ascending: false })
+        .limit(1),
+      admin
+        .from('sf_events')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', twentyFourHoursAgo),
+      admin
+        .from('sf_events')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', twentyFourHoursAgo)
+        .eq('primary_tag', 'regulatory'),
+      admin
+        .from('drip_queue')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'queued'),
+    ]);
+
+    const latencyMs = Math.max(1, Date.now() - dbLatencyStart);
+
+    const secLast = secLatest.data?.[0]?.created_at ?? null;
+    const rssLast = rssLatest.data?.[0]?.created_at ?? null;
+    const total24 = totalCount.count ?? 0;
+    const sec24 = secCount.count ?? 0;
+    const rss24 = Math.max(total24 - sec24, 0);
+    const queuedDrips = queueCount.count ?? 0;
+    const lastDigest = secLast ?? rssLast ?? new Date(now).toISOString();
+
+    return {
+      collectors: {
+        flash_sec: {
+          last_run: secLast ?? 'unknown',
+          success: true,
+          new_records: sec24,
+        },
+        signal_foundry: {
+          last_run: rssLast ?? 'unknown',
+          success: true,
+          new_records: rss24,
+        },
+      },
+      notifier: {
+        last_digest: lastDigest,
+        telegram: queuedDrips > 0 ? 'queued' : 'sent',
+        email: total24 > 0 ? 'sent' : 'queued',
+        last_error: null,
+        queued_drips: queuedDrips,
+      },
+      database: {
+        status: 'healthy',
+        latency_ms: latencyMs,
+      },
+    } satisfies StatusPayload;
+  } catch (error) {
+    console.error('fetchStatusFromSupabase failed', error);
+    return null;
+  }
 }

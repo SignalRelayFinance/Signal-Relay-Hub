@@ -26,6 +26,8 @@ export default async function AccountSettingsPage() {
       .single();
     profile = data;
   }
+  const automationBase = process.env.NEXT_PUBLIC_APP_URL ?? 'https://signalrelayhub.com';
+
   return (
     <div className="space-y-8">
       <section className="rounded-3xl bg-neutral-950 p-8 text-white shadow-xl">
@@ -65,6 +67,30 @@ export default async function AccountSettingsPage() {
               The key is provisioned automatically once your subscription is active.
             </p>
           )}
+        </div>
+        <div className="rounded-3xl border border-white/10 bg-white p-5 shadow">
+          <div className="text-xs uppercase tracking-wide text-neutral-500">Automation recipes</div>
+          <p className="mt-2 text-sm text-neutral-500">
+            Drop these into Zapier, n8n, or your own workers to pull signals or schedule Telegram/email posts.
+          </p>
+          <div className="mt-4 space-y-4 text-xs text-neutral-700">
+            <div>
+              <div className="font-semibold text-neutral-800">Latest signals</div>
+              <pre className="mt-2 rounded-2xl bg-neutral-100 p-3 font-mono text-[11px] text-neutral-700 whitespace-pre-wrap">
+curl -H "Authorization: Bearer {profile?.api_key ?? 'YOUR_API_KEY'}" \
+  "{automationBase}/api/events?limit=10"
+              </pre>
+            </div>
+            <div>
+              <div className="font-semibold text-neutral-800">Schedule a drip</div>
+              <pre className="mt-2 rounded-2xl bg-neutral-100 p-3 font-mono text-[11px] text-neutral-700 whitespace-pre-wrap">
+curl -X POST "{automationBase}/api/drip-queue" \
+  -H "Authorization: Bearer {profile?.api_key ?? 'YOUR_API_KEY'}" \
+  -H "Content-Type: application/json" \
+  -d '{{"channel":"telegram","scheduledAt":"2026-04-02T09:00:00Z","text":"Top 5 signals"}}'
+              </pre>
+            </div>
+          </div>
         </div>
         <div className="rounded-3xl border border-white/10 bg-white p-5 shadow lg:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-3">

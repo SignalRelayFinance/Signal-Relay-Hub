@@ -17,7 +17,8 @@
     "last_digest": "2026-03-03T20:30:05Z",
     "telegram": "sent",
     "email": "skipped",
-    "last_error": null
+    "last_error": null,
+    "queued_drips": 0
   },
   "database": {
     "status": "healthy",
