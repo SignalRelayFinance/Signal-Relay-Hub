@@ -25,6 +25,15 @@ python cli.py normalize
 python cli.py digest
 ```
 
+### Flash SEC collector
+
+The collector now pulls high-impact SEC filings (8-K, SC 13D/13G, Form 4) via
+EDGAR's current-filings Atom feeds. Filings are normalized into the same
+`events-YYYYMMDD.jsonl` file, tagged as `regulatory`, and flow through the
+existing normalizer/digest/push steps. No extra command is required—`collect`
+and `pipeline` automatically append SEC filings after processing the company
+RSS feeds.
+
 ## Environment variables (for Supabase push)
 
 ```

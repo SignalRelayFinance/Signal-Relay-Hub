@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# signal-foundry artifacts
+projects/signal-foundry/data/
+projects/signal-foundry/src/__pycache__/
