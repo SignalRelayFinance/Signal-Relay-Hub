@@ -95,6 +95,7 @@ const baseQuery = admin
         impact_score: row.impact_score,
         confidence: row.confidence,
         fetched_at: row.fetched_at ?? row.created_at,
+        pairs_analysis: row.pairs_analysis ?? null,
       }));
       return { events, next_cursor: undefined };
     }
