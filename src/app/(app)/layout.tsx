@@ -17,6 +17,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link className="hover:text-white" href="/feed">
                   Live Feed
                 </Link>
+                <Link className="hover:text-white" href="/markets">
+                  Markets
+                </Link>
                 <Link className="hover:text-white" href="/digests">
                   Digest Archive
                 </Link>
