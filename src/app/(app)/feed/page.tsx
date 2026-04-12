@@ -129,9 +129,9 @@ export default function LiveFeedPage() {
           </div>
           <div className="grid flex-1 gap-4 text-sm text-white/80 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-wide text-white/60">Signals loaded</div>
-              <div className="mt-2 text-2xl font-semibold">{events.length || '—'}</div>
-              <p className="mt-1 text-xs text-white/60">Current page</p>
+              <div className="text-xs uppercase tracking-wide text-white/60 truncate">Regulatory</div>
+              <div className="mt-2 text-2xl font-semibold">{regulatoryCount}</div>
+              <p className="mt-1 text-xs text-white/60">SEC sources</p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
               <div className="text-xs uppercase tracking-wide text-white/60">Regulatory</div>
