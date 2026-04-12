@@ -127,7 +127,7 @@ export default function LiveFeedPage() {
             <h1 className="mt-3 text-3xl font-semibold leading-tight">Multi-source intel in one stream.</h1>
             <p className="mt-3 text-sm text-white/70">Fresh SEC filings, competitor pricing moves, and AI lab updates. Filter by tag or sentiment and push anything to Telegram in seconds.</p>
           </div>
-          <div className="grid flex-1 gap-4 text-sm text-white/80 sm:grid-cols-3">
+          <div className="grid flex-1 gap-4 text-sm text-white/80 sm:grid-cols-[1fr_1.4fr_1fr]">
             <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
               <div className="text-xs uppercase tracking-wide text-white/60">Signals</div>
               <div className="mt-2 text-2xl font-semibold">{events.length || '—'}</div>
