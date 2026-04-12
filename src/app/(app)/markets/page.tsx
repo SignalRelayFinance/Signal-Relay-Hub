@@ -10,7 +10,7 @@ const PAIRS = [
   { symbol: 'ETHUSD', label: 'Ethereum', category: 'crypto' },
   { symbol: 'EURUSD', label: 'EUR/USD', category: 'forex' },
   { symbol: 'GBPUSD', label: 'GBP/USD', category: 'forex' },
-  { symbol: 'USOIL', label: 'Crude Oil', category: 'commodities' },
+  { symbol: 'US30', label: 'Dow Jones', category: 'equities' },
 ];
 
 const CATEGORIES = ['all', 'crypto', 'forex', 'metals', 'commodities'];
@@ -28,7 +28,7 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
     script.async = true;
     script.innerHTML = JSON.stringify({
-      symbol: symbol === 'XAUUSD' ? 'FOREXCOM:XAUUSD' : symbol === 'USOIL' ? 'PEPPERSTONE:OIL' : symbol === 'BTCUSD' ? 'BITSTAMP:BTCUSD' : symbol === 'ETHUSD' ? 'BITSTAMP:ETHUSD' : `FX:${symbol}`,
+      symbol: symbol === 'XAUUSD' ? 'FOREXCOM:XAUUSD' : symbol === 'USOIL' ? 'PEPPERSTONE:OIL' : symbol === 'BTCUSD' ? 'BITSTAMP:BTCUSD' : symbol === 'ETHUSD' ? 'BITSTAMP:ETHUSD' : `FX:${symbol}`, symbol === 'US30' ? 'FOREXCOM:US30' :
       width: '100%',
       height: 220,
       locale: 'en',
