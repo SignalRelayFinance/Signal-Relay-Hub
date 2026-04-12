@@ -65,7 +65,7 @@ thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
 const baseQuery = admin
   .from('sf_events')
-  .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, created_at')
+ .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, created_at, pairs_analysis')
   .gte('created_at', thirtyDaysAgo.toISOString())
   .order('created_at', { ascending: false })
   .limit(limit);
