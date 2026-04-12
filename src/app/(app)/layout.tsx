@@ -26,6 +26,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link className="hover:text-white" href="/drip-queue">
                   Social Drip Queue
                 </Link>
+                <Link className="hover:text-white" href="/pricing">
+                  Pricing
+                </Link>
                 <Link className="hover:text-white" href="/settings">
                   Account
                 </Link>
