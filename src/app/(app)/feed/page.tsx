@@ -151,8 +151,8 @@ export default function LiveFeedPage() {
     loadEvents(activeTag, next, false);
   }
 
-  const calendarEvents = events.filter((e) => (e as any).event_type === 'economic_calendar');
-  const signalEvents = events.filter((e) => (e as any).event_type !== 'economic_calendar');
+  const calendarEvents = events.filter((e) => e.company === 'Forex Factory');
+  const signalEvents = events.filter((e) => e.company !== 'Forex Factory');
   const regulatoryCount = signalEvents.filter((e) => e.primary_tag === 'regulatory').length;
   const avgImpact = signalEvents.length ? (signalEvents.reduce((sum, e) => sum + (e.impact_score ?? 0), 0) / signalEvents.length).toFixed(1) : '—';
   const flashStatus = status?.collectors?.flash_sec;
