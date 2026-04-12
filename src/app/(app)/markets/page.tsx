@@ -22,13 +22,22 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   commodities: ['oil', 'usoil', 'energy', 'crude'],
 };
 
+function getSymbol(symbol: string): string {
+  if (symbol === 'XAUUSD') return 'OANDA:XAUUSD';
+  if (symbol === 'BTCUSD') return 'BITSTAMP:BTCUSD';
+  if (symbol === 'ETHUSD') return 'BITSTAMP:ETHUSD';
+  if (symbol === 'US30') return 'FOREXCOM:US30';
+  return `FX:${symbol}`;
+}
+
 function TradingViewWidget({ symbol }: { symbol: string }) {
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
     script.async = true;
     script.innerHTML = JSON.stringify({
-symbol: symbol === 'XAUUSD' ? 'OANDA:XAUUSD' : symbol === 'BTCUSD' ? 'BITSTAMP:BTCUSD' : symbol === 'ETHUSD' ? 'BITSTAMP:ETHUSD' : symbol === 'US30' ? 'FOREXCOM:US30' : `FX:${symbol}`,      width: '100%',
+      symbol: getSymbol(symbol),
+      width: '100%',
       height: 220,
       locale: 'en',
       dateRange: '1D',
@@ -44,9 +53,7 @@ symbol: symbol === 'XAUUSD' ? 'OANDA:XAUUSD' : symbol === 'BTCUSD' ? 'BITSTAMP:B
     }
   }, [symbol]);
 
-  return (
-    <div id={`tv-${symbol}`} className="tradingview-widget-container h-[220px] w-full" />
-  );
+  return <div id={`tv-${symbol}`} className="tradingview-widget-container h-[220px] w-full" />;
 }
 
 function TradingViewTicker() {
@@ -110,10 +117,7 @@ export default function MarketsPage() {
     const matchesCategory = category === 'all' || (() => {
       const keywords = CATEGORY_KEYWORDS[category] ?? [];
       const text = `${e.title} ${e.summary} ${e.company} ${e.tags?.join(' ')}`.toLowerCase();
-      if (e.pairs_analysis?.pairs?.some((p) => {
-        const pair = p.pair.toLowerCase();
-        return keywords.some((k) => pair.includes(k));
-      })) return true;
+      if (e.pairs_analysis?.pairs?.some((p) => keywords.some((k) => p.pair.toLowerCase().includes(k)))) return true;
       return keywords.some((k) => text.includes(k));
     })();
     return matchesSentiment && matchesCategory;
@@ -159,7 +163,6 @@ export default function MarketsPage() {
             </div>
           </div>
         </div>
-
         {loading ? (
           <div className="text-sm text-white/50 text-center py-8">Loading signals…</div>
         ) : filteredEvents.length === 0 ? (
