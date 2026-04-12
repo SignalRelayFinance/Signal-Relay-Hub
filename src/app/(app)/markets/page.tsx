@@ -28,8 +28,7 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
     script.async = true;
     script.innerHTML = JSON.stringify({
-      symbol: symbol === 'XAUUSD' ? 'FOREXCOM:XAUUSD' : symbol === 'USOIL' ? 'PEPPERSTONE:OIL' : symbol === 'BTCUSD' ? 'BITSTAMP:BTCUSD' : symbol === 'ETHUSD' ? 'BITSTAMP:ETHUSD' : `FX:${symbol}`, symbol === 'US30' ? 'FOREXCOM:US30' :
-      width: '100%',
+symbol: symbol === 'XAUUSD' ? 'OANDA:XAUUSD' : symbol === 'BTCUSD' ? 'BITSTAMP:BTCUSD' : symbol === 'ETHUSD' ? 'BITSTAMP:ETHUSD' : symbol === 'US30' ? 'FOREXCOM:US30' : `FX:${symbol}`,      width: '100%',
       height: 220,
       locale: 'en',
       dateRange: '1D',
