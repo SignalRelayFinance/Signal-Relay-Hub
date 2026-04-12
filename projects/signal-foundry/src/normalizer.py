@@ -51,11 +51,19 @@ class NormalizedEvent:
             "id": event_id(enriched),
             "tags": self.tags,
             "primary_tag": self.tags[0] if self.tags else "general",
-            "sentiment": self.sentiment,
-            "impact_score": self.impact_score,
-            "confidence": self.confidence,
             "normalized_at": datetime.utcnow().isoformat(),
         })
+        # Only override sentiment/impact if not already set by collector
+        if not enriched.get("sentiment"):
+            enriched["sentiment"] = self.sentiment
+        if not enriched.get("impact_score"):
+            enriched["impact_score"] = self.impact_score
+        if not enriched.get("confidence"):
+            enriched["confidence"] = self.confidence
+        # Preserve Forex Factory fields
+        for field in ["event_type", "currency", "impact", "impact_color", "forecast", "previous", "actual"]:
+            if field in self.record:
+                enriched[field] = self.record[field]
         return enriched
         
 def strip_html(text: str) -> str:
