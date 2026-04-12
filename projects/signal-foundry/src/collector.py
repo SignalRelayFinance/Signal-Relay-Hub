@@ -2,19 +2,25 @@
 """SignalFoundry collector.
 
 Reads feeds/companies.yaml and pulls RSS sources into a normalized JSONL file.
+Also collects SEC filings and Forex Factory economic calendar events.
 """
 from __future__ import annotations
 
 import argparse
 import json
 from datetime import datetime, timedelta
-import re 
+import re
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
 import feedparser  # type: ignore
 import yaml  # type: ignore
+
+try:
+    import requests  # type: ignore
+except ImportError:
+    requests = None  # type: ignore
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 FEEDS_PATH = BASE_DIR / "feeds" / "companies.yaml"
@@ -41,6 +47,9 @@ SEC_FEEDS = [
         "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&count=80&output=atom",
     },
 ]
+
+FF_CALENDAR_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+FF_IMPACT_MAP = {"High": "red", "Medium": "orange", "Low": "yellow"}
 
 SEC_TITLE_RE = re.compile(r"^(?P<form>[A-Za-z0-9\- ]+)\s*-\s*(?P<company>.+?)\s*\((?P<cik>\d+)\)")
 
@@ -69,14 +78,13 @@ def fetch_rss(url: str) -> List[Dict[str, Any]]:
 
 
 def is_recent(published: str | None) -> bool:
-    """Return True if the entry was published within MAX_AGE_DAYS days."""
     if not published:
-        return True  # no date = include it
+        return True
     try:
         pub_date = parsedate_to_datetime(published).replace(tzinfo=None)
         return (datetime.utcnow() - pub_date).days <= MAX_AGE_DAYS
     except Exception:
-        return True  # unparseable date = include it
+        return True
 
 
 def is_recent_sec(published: str | None) -> bool:
@@ -130,6 +138,107 @@ def collect_sec_filings(handle, count: int, limit: int) -> int:
             added += 1
     if added:
         print(f"Added {added} SEC filings")
+    return added
+
+
+def collect_forex_factory(handle, count: int, limit: int) -> int:
+    """Collect high and medium impact economic calendar events from Forex Factory."""
+    if requests is None:
+        print("requests not installed, skipping Forex Factory")
+        return 0
+
+    try:
+        resp = requests.get(
+            FF_CALENDAR_URL,
+            headers={"User-Agent": USER_AGENT},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        events = resp.json()
+    except Exception as e:
+        print(f"Forex Factory fetch failed: {e}")
+        return 0
+
+    added = 0
+    now = datetime.utcnow()
+
+    for event in events:
+        if limit and (count + added) >= limit:
+            break
+
+        impact = event.get("impact", "Low")
+        # Only collect High and Medium impact events
+        if impact not in ("High", "Medium"):
+            continue
+
+        # Parse event date
+        date_str = event.get("date", "")
+        try:
+            event_date = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
+        except Exception:
+            try:
+                event_date = datetime.strptime(date_str[:19], "%Y-%m-%dT%H:%M:%S")
+            except Exception:
+                continue
+
+        # Only include events within next 7 days or past 24 hours
+        delta = event_date - now
+        if delta.total_seconds() < -86400 or delta.total_seconds() > 7 * 86400:
+            continue
+
+        currency = event.get("country", "")
+        title = event.get("title", "")
+        forecast = event.get("forecast", "")
+        previous = event.get("previous", "")
+        actual = event.get("actual", "")
+        impact_color = FF_IMPACT_MAP.get(impact, "yellow")
+
+        # Build summary
+        parts = []
+        if forecast:
+            parts.append(f"Forecast: {forecast}")
+        if previous:
+            parts.append(f"Previous: {previous}")
+        if actual:
+            parts.append(f"Actual: {actual}")
+        summary = " | ".join(parts) if parts else f"{impact} impact {currency} event"
+
+        # Determine sentiment based on actual vs forecast
+        sentiment = "neutral"
+        if actual and forecast:
+            try:
+                act_val = float(actual.replace("%", "").replace("K", "000").replace("M", "000000").replace("B", "000000000").replace(",", ""))
+                fore_val = float(forecast.replace("%", "").replace("K", "000").replace("M", "000000").replace("B", "000000000").replace(",", ""))
+                if act_val > fore_val:
+                    sentiment = "positive"
+                elif act_val < fore_val:
+                    sentiment = "negative"
+            except Exception:
+                pass
+
+        record = {
+            "company": f"Forex Factory",
+            "source": "Forex Factory Economic Calendar",
+            "title": f"{currency} {title}",
+            "link": "https://www.forexfactory.com/calendar",
+            "summary": summary,
+            "published": date_str,
+            "tag": "regulatory",
+            "fetched_at": datetime.utcnow().isoformat(),
+            "event_type": "economic_calendar",
+            "currency": currency,
+            "impact": impact,
+            "impact_color": impact_color,
+            "forecast": forecast,
+            "previous": previous,
+            "actual": actual,
+            "sentiment": sentiment,
+        }
+        handle.write(json.dumps(record) + "\n")
+        added += 1
+
+    if added:
+        print(f"Added {added} Forex Factory economic calendar events")
     return added
 
 
@@ -192,6 +301,10 @@ def run_collection(limit: int = 0, stamp: str | None = None) -> Path:
         if not limit or count < limit:
             sec_added = collect_sec_filings(handle, count, limit)
             count += sec_added
+
+        if not limit or count < limit:
+            ff_added = collect_forex_factory(handle, count, limit)
+            count += ff_added
 
     print(f"Saved {count} events -> {out_path}")
     return out_path
