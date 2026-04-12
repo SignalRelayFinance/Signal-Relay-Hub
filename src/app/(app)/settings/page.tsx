@@ -26,7 +26,7 @@ export default async function AccountSettingsPage() {
       .single();
     profile = data;
   }
-  const automationBase = process.env.NEXT_PUBLIC_APP_URL ?? 'https://signalrelayhub.com';
+  const automationBase = process.env.NEXT_PUBLIC_APP_URL ?? 'https://signalrelayhub.io';
 
   return (
     <div className="space-y-8">
@@ -42,14 +42,9 @@ export default async function AccountSettingsPage() {
             {profile?.is_subscribed ? 'Signal Relay Hub — £45/month' : 'Free plan'}
           </div>
           <p className="mt-1 text-sm text-neutral-500">
-            {profile?.is_subscribed
-              ? 'Billing handled via Stripe. Manage or cancel anytime.'
-              : 'Unlock Flash SEC push delivery and API access.'}
+            {profile?.is_subscribed ? 'Billing handled via Stripe. Manage or cancel anytime.' : 'Unlock Flash SEC push delivery and API access.'}
           </p>
-          <a
-            href="/api/stripe/checkout"
-            className="mt-4 inline-flex rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-          >
+          <a href="/api/stripe/checkout" className="mt-4 inline-flex rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800">
             {profile?.is_subscribed ? 'Manage billing' : 'Subscribe now'}
           </a>
         </div>
@@ -58,37 +53,23 @@ export default async function AccountSettingsPage() {
           {profile?.api_key ? (
             <>
               <p className="mt-2 text-sm text-neutral-500">Use this bearer token for all API requests.</p>
-              <div className="mt-3 rounded-2xl bg-neutral-100 p-3 font-mono text-sm text-neutral-800 break-all">
-                {profile.api_key}
-              </div>
+              <div className="mt-3 rounded-2xl bg-neutral-100 p-3 font-mono text-sm text-neutral-800 break-all">{profile.api_key}</div>
             </>
           ) : (
-            <p className="mt-2 text-sm text-neutral-500">
-              The key is provisioned automatically once your subscription is active.
-            </p>
+            <p className="mt-2 text-sm text-neutral-500">The key is provisioned automatically once your subscription is active.</p>
           )}
         </div>
         <div className="rounded-3xl border border-white/10 bg-white p-5 shadow">
           <div className="text-xs uppercase tracking-wide text-neutral-500">Automation recipes</div>
-          <p className="mt-2 text-sm text-neutral-500">
-            Drop these into Zapier, n8n, or your own workers to pull signals or schedule Telegram/email posts.
-          </p>
+          <p className="mt-2 text-sm text-neutral-500">Drop these into Zapier, n8n, or your own workers to pull signals or schedule posts.</p>
           <div className="mt-4 space-y-4 text-xs text-neutral-700">
             <div>
               <div className="font-semibold text-neutral-800">Latest signals</div>
-              <pre className="mt-2 rounded-2xl bg-neutral-100 p-3 font-mono text-[11px] text-neutral-700 whitespace-pre-wrap">
-curl -H "Authorization: Bearer {profile?.api_key ?? 'YOUR_API_KEY'}" \
-  "{automationBase}/api/events?limit=10"
-              </pre>
+              <pre className="mt-2 rounded-2xl bg-neutral-100 p-3 font-mono text-[11px] text-neutral-700 whitespace-pre-wrap">{`curl -H "Authorization: Bearer ${profile?.api_key ?? 'YOUR_API_KEY'}" \\\n  "${automationBase}/api/events?limit=10"`}</pre>
             </div>
             <div>
               <div className="font-semibold text-neutral-800">Schedule a drip</div>
-              <pre className="mt-2 rounded-2xl bg-neutral-100 p-3 font-mono text-[11px] text-neutral-700 whitespace-pre-wrap">
-curl -X POST "{automationBase}/api/drip-queue" \
-  -H "Authorization: Bearer {profile?.api_key ?? 'YOUR_API_KEY'}" \
-  -H "Content-Type: application/json" \
-  -d '{{"channel":"telegram","scheduledAt":"2026-04-02T09:00:00Z","text":"Top 5 signals"}}'
-              </pre>
+              <pre className="mt-2 rounded-2xl bg-neutral-100 p-3 font-mono text-[11px] text-neutral-700 whitespace-pre-wrap">{`curl -X POST "${automationBase}/api/drip-queue" \\\n  -H "Authorization: Bearer ${profile?.api_key ?? 'YOUR_API_KEY'}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"channel":"telegram","scheduledAt":"2026-04-02T09:00:00Z","text":"Top 5 signals"}'`}</pre>
             </div>
           </div>
         </div>
@@ -99,31 +80,21 @@ curl -X POST "{automationBase}/api/drip-queue" \
               <div className="mt-1 text-xl font-semibold text-neutral-900">Stay in sync via push</div>
             </div>
             {profile?.telegram_chat_id ? (
-              <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Connected
-              </span>
+              <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Connected</span>
             ) : null}
           </div>
           {profile?.telegram_chat_id ? (
             <div className="mt-4">
               <p className="text-sm text-neutral-500">Select which tags should fire Telegram alerts.</p>
               <div className="mt-4 rounded-2xl border border-neutral-200 p-3">
-                <TelegramTagSelector
-                  email={user?.email ?? ''}
-                  initialTags={profile.telegram_tags ?? ['product', 'regulatory', 'funding', 'pricing', 'security']}
-                />
+                <TelegramTagSelector email={user?.email ?? ''} initialTags={profile.telegram_tags ?? ['product', 'regulatory', 'funding', 'pricing', 'security']} />
               </div>
             </div>
           ) : (
             <div className="mt-4 space-y-3 text-sm text-neutral-600">
               <p>Connect Telegram to receive push alerts the second new signals land.</p>
               <ol className="list-decimal space-y-1 pl-5">
-                <li>
-                  Open{' '}
-                  <a className="text-blue-600 hover:underline" href="https://t.me/signalrelayhub_bot" target="_blank" rel="noreferrer">
-                    @signalrelayhub_bot
-                  </a>
-                </li>
+                <li>Open <a className="text-blue-600 hover:underline" href="https://t.me/signalrelayhub_bot" target="_blank" rel="noreferrer">@signalrelayhub_bot</a></li>
                 <li>Send it the command below.</li>
               </ol>
               <div className="rounded-2xl bg-neutral-100 p-2 font-mono text-xs text-neutral-800">/connect {user?.email}</div>
