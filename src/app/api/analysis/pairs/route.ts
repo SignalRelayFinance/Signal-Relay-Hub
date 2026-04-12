@@ -100,5 +100,5 @@ strength: 1=weak, 2=moderate, 3=strong. Only include pairs meaningfully affected
     }
   }
 
-  return NextResponse.json({ ok: true, analysed });
+  return NextResponse.json({ ok: true, analysed, total_found: events.length });
 }
