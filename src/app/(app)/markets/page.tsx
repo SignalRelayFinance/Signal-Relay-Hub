@@ -28,7 +28,7 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
     script.async = true;
     script.innerHTML = JSON.stringify({
-      symbol: `FX:${symbol}`,
+      symbol: symbol === 'XAUUSD' ? 'FOREXCOM:XAUUSD' : symbol === 'USOIL' ? 'NYMEX:CL1!' : symbol === 'BTCUSD' ? 'BITSTAMP:BTCUSD' : symbol === 'ETHUSD' ? 'BITSTAMP:ETHUSD' : `FX:${symbol}`,
       width: '100%',
       height: 220,
       locale: 'en',
