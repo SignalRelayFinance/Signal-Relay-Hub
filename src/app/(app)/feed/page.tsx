@@ -25,34 +25,43 @@ function CalendarCard({ event }: { event: SignalEvent }) {
   const forecast = (event as any).forecast as string | undefined;
   const actual = (event as any).actual_value as string | undefined;
   const previous = (event as any).previous_value as string | undefined;
-  const isUpcoming = !actual;
-  const beat = actual && forecast && parseFloat(actual) > parseFloat(forecast);
-  const missed = actual && forecast && parseFloat(actual) < parseFloat(forecast);
+
+  let beat = false;
+  let missed = false;
+  if (actual && forecast) {
+    try {
+      const a = parseFloat(actual.replace(/[%KMB,]/g, ''));
+      const f = parseFloat(forecast.replace(/[%KMB,]/g, ''));
+      if (!isNaN(a) && !isNaN(f)) { beat = a > f; missed = a < f; }
+    } catch { /* ignore */ }
+  }
 
   return (
-    <div className={`rounded-2xl border p-3 text-white ${isUpcoming ? 'border-white/10 bg-white/5' : beat ? 'border-emerald-500/30 bg-emerald-500/10' : missed ? 'border-rose-500/30 bg-rose-500/10' : 'border-white/10 bg-white/5'}`}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {impact && <span className={`h-2 w-2 rounded-full shrink-0 ${impactColors[impact] ?? 'bg-gray-500'}`} />}
-          <span className="text-xs font-mono text-white/50">
-            {event.published_at ? new Date(event.published_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'}
-          </span>
-          {currency && <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold text-white">{currency}</span>}
-        </div>
-        {actual && (
-          <span className={`text-xs font-bold ${beat ? 'text-emerald-400' : missed ? 'text-rose-400' : 'text-white/50'}`}>
-            {beat ? '▲' : missed ? '▼' : '—'} {actual}
-          </span>
-        )}
+    <div className={`rounded-xl border p-3 text-white ${actual ? (beat ? 'border-emerald-500/30 bg-emerald-500/10' : missed ? 'border-rose-500/30 bg-rose-500/10' : 'border-white/10 bg-white/5') : 'border-white/10 bg-white/5'}`}>
+      <div className="flex items-center gap-2 mb-2">
+        {impact && <span className={`h-2 w-2 rounded-full shrink-0 ${impactColors[impact] ?? 'bg-gray-500'}`} />}
+        <span className="text-xs font-mono text-white/50">
+          {event.published_at ? new Date(event.published_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'}
+        </span>
+        {currency && <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold text-white">{currency}</span>}
       </div>
-      <div className="mt-1.5 text-sm font-medium text-white leading-snug">
+      <div className="text-sm font-medium text-white leading-snug mb-2">
         {event.title?.replace(/^[A-Z]{3}\s/, '')}
       </div>
-      {(forecast || previous) && (
-        <div className="mt-1.5 flex gap-3 text-xs text-white/50">
-          {forecast && <span>F: <span className="text-white/70">{forecast}</span></span>}
-          {previous && <span>P: <span className="text-white/70">{previous}</span></span>}
-          {actual && <span>A: <span className={`font-semibold ${beat ? 'text-emerald-400' : missed ? 'text-rose-400' : 'text-white/70'}`}>{actual}</span></span>}
+      {(actual || forecast || previous) && (
+        <div className="grid grid-cols-3 gap-1 text-xs border-t border-white/10 pt-2">
+          <div>
+            <div className="text-white/40 mb-0.5">Actual</div>
+            <div className={`font-bold ${beat ? 'text-emerald-400' : missed ? 'text-rose-400' : 'text-white/70'}`}>{actual || '—'}</div>
+          </div>
+          <div>
+            <div className="text-white/40 mb-0.5">Forecast</div>
+            <div className="text-white/70">{forecast || '—'}</div>
+          </div>
+          <div>
+            <div className="text-white/40 mb-0.5">Previous</div>
+            <div className="text-white/50">{previous || '—'}</div>
+          </div>
         </div>
       )}
     </div>
