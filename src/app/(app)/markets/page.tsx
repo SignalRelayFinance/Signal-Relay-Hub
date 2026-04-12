@@ -16,10 +16,17 @@ const PAIRS = [
 const CATEGORIES = ['all', 'crypto', 'forex', 'metals', 'commodities'];
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  crypto: ['bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'coinbase', 'blockchain'],
-  forex: ['eurusd', 'gbpusd', 'fed', 'ecb', 'central bank', 'interest rate', 'currency', 'revolut'],
-  metals: ['gold', 'silver', 'xauusd', 'commodit', 'precious'],
-  commodities: ['oil', 'usoil', 'energy', 'crude'],
+  crypto: ['bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'coinbase', 'blockchain', 'btcusd', 'ethusd'],
+  forex: ['eurusd', 'gbpusd', 'fed', 'ecb', 'central bank', 'interest rate', 'currency', 'revolut', 'stripe', 'payment', 'fx'],
+  metals: ['gold', 'silver', 'xauusd', 'commodit', 'precious', 'metal'],
+  commodities: ['oil', 'usoil', 'energy', 'crude', 'commodity'],
+};
+
+const CATEGORY_PAIRS: Record<string, string[]> = {
+  crypto: ['BTCUSD', 'ETHUSD'],
+  forex: ['EURUSD', 'GBPUSD'],
+  metals: ['XAUUSD'],
+  commodities: ['USOIL'],
 };
 
 function getSymbol(symbol: string): string {
@@ -116,8 +123,9 @@ export default function MarketsPage() {
     const matchesSentiment = sentiment === 'all' || e.sentiment === sentiment;
     const matchesCategory = category === 'all' || (() => {
       const keywords = CATEGORY_KEYWORDS[category] ?? [];
+      const pairNames = CATEGORY_PAIRS[category] ?? [];
       const text = `${e.title} ${e.summary} ${e.company} ${e.tags?.join(' ')}`.toLowerCase();
-      if (e.pairs_analysis?.pairs?.some((p) => keywords.some((k) => p.pair.toLowerCase().includes(k)))) return true;
+      if (e.pairs_analysis?.pairs?.some((p) => pairNames.includes(p.pair))) return true;
       return keywords.some((k) => text.includes(k));
     })();
     return matchesSentiment && matchesCategory;
@@ -147,14 +155,14 @@ export default function MarketsPage() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <h2 className="text-xl font-semibold">Signal impact on markets</h2>
           <div className="flex flex-wrap gap-3">
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {CATEGORIES.map((cat) => (
                 <button key={cat} onClick={() => setCategory(cat)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${category === cat ? 'bg-white text-neutral-900' : 'bg-white/10 text-white hover:bg-white/20'}`}>
                   {cat}
                 </button>
               ))}
             </div>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {['all', 'positive', 'neutral', 'negative'].map((s) => (
                 <button key={s} onClick={() => setSentiment(s)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${sentiment === s ? (s === 'positive' ? 'bg-emerald-500 text-white' : s === 'negative' ? 'bg-rose-500 text-white' : 'bg-white text-neutral-900') : 'bg-white/10 text-white hover:bg-white/20'}`}>
                   {s === 'positive' ? '▲ Bullish' : s === 'negative' ? '▼ Bearish' : s === 'neutral' ? '— Neutral' : 'All'}
@@ -166,7 +174,7 @@ export default function MarketsPage() {
         {loading ? (
           <div className="text-sm text-white/50 text-center py-8">Loading signals…</div>
         ) : filteredEvents.length === 0 ? (
-          <div className="text-sm text-white/50 text-center py-8">No signals match this filter.</div>
+          <div className="text-sm text-white/50 text-center py-8">No signals match this filter — try All to see everything, or wait for the next pipeline run to populate market pair analysis.</div>
         ) : (
           <div className="space-y-3">
             {filteredEvents.map((event) => (
@@ -182,7 +190,7 @@ export default function MarketsPage() {
                   </span>
                 </div>
                 <a href={event.source_url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-white hover:text-sky-200">{event.title}</a>
-                {event.pairs_analysis && (
+                {event.pairs_analysis ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {event.pairs_analysis.pairs?.map((p) => (
                       <div key={p.pair} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1">
@@ -195,6 +203,8 @@ export default function MarketsPage() {
                     ))}
                     {event.pairs_analysis.overall && <p className="w-full mt-1 text-xs text-white/50">{event.pairs_analysis.overall}</p>}
                   </div>
+                ) : (
+                  <div className="mt-2 text-xs text-white/30">Market pair analysis pending next pipeline run</div>
                 )}
               </div>
             ))}
