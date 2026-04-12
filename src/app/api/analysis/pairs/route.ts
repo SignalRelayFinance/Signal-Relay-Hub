@@ -22,10 +22,10 @@ export async function POST(req: Request) {
   const { data: events } = await supabase
     .from('sf_events')
     .select('id, title, summary, company, primary_tag, impact_score')
-    .gte('impact_score', 3)
+    .gte('impact_score', 1)
     .is('pairs_analysis', null)
     .order('fetched_at', { ascending: false })
-    .limit(10);
+    .limit(20);
 
   if (!events || events.length === 0) {
     return NextResponse.json({ ok: true, analysed: 0 });
