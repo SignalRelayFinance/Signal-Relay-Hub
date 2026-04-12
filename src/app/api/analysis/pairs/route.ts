@@ -79,15 +79,19 @@ strength: 1=weak, 2=moderate, 3=strong. Only include pairs meaningfully affected
         }),
       });
 
-      const data = await response.json();
+     const data = await response.json();
+      if (data.error) {
+        return NextResponse.json({ ok: false, anthropic_error: data.error, model: 'claude-haiku-4-5-20251001' });
+      }
       const text = data.content?.[0]?.text ?? '';
 
       let analysis;
       try {
         analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
-      } catch {
-        continue;
-      }
+      } catch (err) {
+      console.error('Analysis error:', err);
+      continue;
+    }
 
       await supabase
         .from('sf_events')
