@@ -65,8 +65,7 @@ thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
 const baseQuery = admin
   .from('sf_events')
- .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, created_at, pairs_analysis, event_type, currency, impact, impact_color, forecast, previous_value, actual_value')
-  .gte('created_at', thirtyDaysAgo.toISOString())
+ .select('id, company, source, title, link, summary, published, primary_tag, tags, sentiment, impact_score, confidence, fetched_at, created_at, pairs_analysis, trade_prediction, event_type, currency, impact, impact_color, forecast, previous_value, actual_value')
   .order('created_at', { ascending: false })
   .limit(limit);
 
@@ -103,6 +102,7 @@ const baseQuery = admin
         forecast: row.forecast ?? null,
         previous_value: row.previous_value ?? null,
         actual_value: row.actual_value ?? null,
+        trade_prediction: row.trade_prediction ?? null,
       }));
       return { events, next_cursor: undefined };
     }
