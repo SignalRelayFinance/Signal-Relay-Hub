@@ -72,7 +72,7 @@ export default function LandingPage() {
                 Signal Relay Hub watches AI labs, fintechs, and regulators in real time. When a filing
                 or pricing change hits, we push it to Telegram, email, and your API stack within minutes.
               </p>
-              <div className="mt-8 flex flex-wrap gap-4">
+              <div className="mt-8 flex flex-wrap justify-center sm:justify-start gap-4">
                 <Link
                   href="/login"
                   className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200"
@@ -181,7 +181,7 @@ export default function LandingPage() {
             </div>
             <Link
               href="/login"
-              className="mt-6 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200 sm:mt-0"
+              className="mt-6 block text-center rounded-full bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200 sm:mt-0 sm:inline-block"
             >
               Get started
             </Link>
