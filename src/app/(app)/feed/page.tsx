@@ -41,7 +41,7 @@ function CalendarCard({ event }: { event: SignalEvent }) {
       <div className="flex items-center gap-2 mb-2">
         {impact && <span className={`h-2 w-2 rounded-full shrink-0 ${impactColors[impact] ?? 'bg-gray-500'}`} />}
         <span className="text-xs font-mono text-white/50">
-          {event.published_at ? new Date(event.published_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'}
+          {event.published_at ? new Date(event.published_at).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
         </span>
         {currency && <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold text-white">{currency}</span>}
       </div>
