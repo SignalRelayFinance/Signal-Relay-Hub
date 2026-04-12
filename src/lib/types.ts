@@ -12,6 +12,24 @@ export interface PairsAnalysis {
   overall: string;
 }
 
+export interface TradeSetup {
+  pair: string;
+  direction: 'long' | 'short';
+  conviction: 'high' | 'medium' | 'low';
+  entry_zone: string;
+  target: string;
+  stop_loss: string;
+  timeframe: string;
+  thesis: string;
+  key_risks: string;
+}
+
+export interface TradePrediction {
+  trades: TradeSetup[];
+  market_summary: string;
+  do_not_trade: string;
+}
+
 export interface SignalEvent {
   id: string;
   company: string;
@@ -26,6 +44,7 @@ export interface SignalEvent {
   fetched_at: string;
   published_at: string;
   pairs_analysis?: PairsAnalysis | null;
+  trade_prediction?: TradePrediction | null;
 }
 
 export interface EventsPayload {
