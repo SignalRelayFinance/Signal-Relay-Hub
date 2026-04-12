@@ -19,7 +19,8 @@ export async function POST(req: Request) {
   const supabase = getServiceClient();
 
   // Get recent high-impact events without pairs analysis
-  const { data: events } = await supabase
+  // Get recent high-impact events without pairs analysis
+  const { data: events, error: queryError } = await supabase
     .from('sf_events')
     .select('id, title, summary, company, primary_tag, impact_score')
     .gte('impact_score', 1)
@@ -27,8 +28,12 @@ export async function POST(req: Request) {
     .order('fetched_at', { ascending: false })
     .limit(20);
 
+  if (queryError) {
+    return NextResponse.json({ ok: false, error: queryError.message });
+  }
+
   if (!events || events.length === 0) {
-    return NextResponse.json({ ok: true, analysed: 0 });
+    return NextResponse.json({ ok: true, analysed: 0, debug: 'no events found matching query' });
   }
 
   let analysed = 0;
