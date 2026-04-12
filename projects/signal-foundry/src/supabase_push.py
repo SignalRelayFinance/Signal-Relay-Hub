@@ -51,7 +51,7 @@ def load_jsonl(path: Path) -> List[Dict[str, Any]]:
 
 def map_record(r: Dict[str, Any]) -> Dict[str, Any]:
     """Map a normalized event dict to the sf_events table schema."""
-    return {
+    record = {
         "id": r.get("id"),
         "company": r.get("company"),
         "source": r.get("source"),
@@ -67,6 +67,16 @@ def map_record(r: Dict[str, Any]) -> Dict[str, Any]:
         "fetched_at": r.get("fetched_at"),
         "normalized_at": r.get("normalized_at"),
     }
+    # Forex Factory economic calendar fields
+    if r.get("event_type") == "economic_calendar":
+        record["event_type"] = r.get("event_type")
+        record["currency"] = r.get("currency")
+        record["impact"] = r.get("impact")
+        record["impact_color"] = r.get("impact_color")
+        record["forecast"] = r.get("forecast")
+        record["previous_value"] = r.get("previous")
+        record["actual_value"] = r.get("actual")
+    return record
 
 
 def push_events(path: Path, dry_run: bool = False) -> int:
