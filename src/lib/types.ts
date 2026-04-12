@@ -1,5 +1,17 @@
 export type Sentiment = 'positive' | 'neutral' | 'negative';
 
+export interface PairImpact {
+  pair: string;
+  direction: 'bullish' | 'bearish' | 'neutral';
+  strength: 1 | 2 | 3;
+  reason: string;
+}
+
+export interface PairsAnalysis {
+  pairs: PairImpact[];
+  overall: string;
+}
+
 export interface SignalEvent {
   id: string;
   company: string;
@@ -13,6 +25,7 @@ export interface SignalEvent {
   sentiment: Sentiment;
   fetched_at: string;
   published_at: string;
+  pairs_analysis?: PairsAnalysis | null;
 }
 
 export interface EventsPayload {
