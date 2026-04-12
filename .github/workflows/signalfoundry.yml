@@ -53,7 +53,7 @@ jobs:
         env:
           PROVISION_WEBHOOK_SECRET: ${{ secrets.PROVISION_WEBHOOK_SECRET }}
         run: |
-          curl -s -X POST https://signal-relay-hub-flsg.vercel.app/api/telegram/notify \
+          curl -s -X POST https://www.signalrelayhub.io/api/telegram/notify \
             -H "Content-Type: application/json" \
             -H "x-provision-secret: $PROVISION_WEBHOOK_SECRET"
       - name: Analyse market pair impacts
@@ -61,6 +61,6 @@ jobs:
         env:
           PROVISION_WEBHOOK_SECRET: ${{ secrets.PROVISION_WEBHOOK_SECRET }}
         run: |
-          curl -s -X POST https://signal-relay-hub-flsg.vercel.app/api/analysis/pairs \
+          curl -s -X POST https://www.signalrelayhub.io/api/analysis/pairs \
             -H "Content-Type: application/json" \
             -H "x-provision-secret: $PROVISION_WEBHOOK_SECRET"
