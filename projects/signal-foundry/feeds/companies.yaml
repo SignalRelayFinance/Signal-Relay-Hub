@@ -3,83 +3,91 @@ companies:
     feeds:
       blogs:
         - "https://openai.com/blog/rss.xml"
-
   - name: "Anthropic"
     feeds:
       blogs:
         - "https://www.anthropic.com/rss.xml"
-
   - name: "Google DeepMind"
     feeds:
       blogs:
         - "https://deepmind.google/blog/rss.xml"
-
   - name: "Meta AI"
     feeds:
       blogs:
         - "https://ai.meta.com/blog/rss/"
-
   - name: "Mistral"
     feeds:
       blogs:
         - "https://mistral.ai/news/rss"
-
   - name: "Cloudflare"
     feeds:
       blogs:
         - "https://blog.cloudflare.com/rss/"
-
   - name: "Stripe"
     feeds:
       blogs:
         - "https://stripe.com/blog/feed.rss"
-
   - name: "Supabase"
     feeds:
       blogs:
         - "https://supabase.com/rss.xml"
-
   - name: "Coinbase"
     feeds:
       blogs:
         - "https://www.coinbase.com/blog/landing/rss"
-
   - name: "Robinhood"
     feeds:
       blogs:
         - "https://newsroom.aboutrobinhood.com/feed/"
-
   - name: "Revolut"
     feeds:
       blogs:
         - "https://blog.revolut.com/rss/"
-
   - name: "Notion"
     feeds:
       blogs:
         - "https://www.notion.so/blog/rss.xml"
-
   - name: "Linear"
     feeds:
       blogs:
         - "https://linear.app/changelog/rss.xml"
-
   - name: "Figma"
     feeds:
       blogs:
         - "https://www.figma.com/blog/rss/"
-
   - name: "GitHub"
     feeds:
       blogs:
         - "https://github.blog/feed/"
-
   - name: "Cursor"
     feeds:
       blogs:
         - "https://cursor.sh/blog/rss.xml"
-
   - name: "SEC Press Releases"
     feeds:
       blogs:
         - "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&dateb=&owner=include&count=20&output=atom"
+  - name: "CoinDesk"
+    feeds:
+      blogs:
+        - "https://www.coindesk.com/arc/outboundfeeds/rss/"
+  - name: "CoinTelegraph"
+    feeds:
+      blogs:
+        - "https://cointelegraph.com/rss"
+  - name: "Bitcoin Magazine"
+    feeds:
+      blogs:
+        - "https://bitcoinmagazine.com/.rss/full/"
+  - name: "FXStreet"
+    feeds:
+      blogs:
+        - "https://www.fxstreet.com/rss/news"
+  - name: "Kitco Gold"
+    feeds:
+      blogs:
+        - "https://www.kitco.com/rss/KitcoNews.xml"
+  - name: "OilPrice"
+    feeds:
+      blogs:
+        - "https://oilprice.com/rss/main"
