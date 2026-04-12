@@ -162,9 +162,9 @@ export default function LiveFeedPage() {
   const todayCalendar = calendarEvents.filter((e) => {
     const d = new Date(e.published_at ?? '');
     const now = new Date();
-    return d.toDateString() === now.toDateString() ||
-      (d > now && d.getTime() - now.getTime() < 7 * 86400000);
-  }).slice(0, 20);
+    const diffMs = d.getTime() - now.getTime();
+    return diffMs > -86400000 * 2 && diffMs < 86400000 * 7;
+  }).sort((a, b) => new Date(a.published_at ?? '').getTime() - new Date(b.published_at ?? '').getTime()).slice(0, 20);
 
   return (
     <div className="space-y-6">
