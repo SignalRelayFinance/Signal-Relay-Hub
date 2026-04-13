@@ -94,7 +94,7 @@ export default async function PricingPage() {
                   </div>
                 )}
               </div>
-              <a href="/api/stripe/checkout" className="block w-full rounded-full bg-white py-2.5 text-center text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">
+              <a href="/api/stripe/portal" className="block w-full rounded-full bg-white py-2.5 text-center text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">
                 Manage billing
               </a>
             </div>
@@ -132,7 +132,7 @@ export default async function PricingPage() {
                   </div>
                 )}
               </div>
-              <a href="/api/stripe/checkout-elite" className="block w-full rounded-full bg-amber-400 py-2.5 text-center text-sm font-semibold text-neutral-900 hover:bg-amber-300 transition-colors">
+              <a href="/api/stripe/portal" className="block w-full rounded-full bg-amber-400 py-2.5 text-center text-sm font-semibold text-neutral-900 hover:bg-amber-300 transition-colors">
                 Manage billing
               </a>
             </div>
