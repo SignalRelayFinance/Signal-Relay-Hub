@@ -38,6 +38,7 @@ export async function POST(req: Request) {
       id: string;
       customer?: string | null;
       customer_details?: { email?: string | null };
+      amount_total?: number | null;
     };
 
     const provisionSecret = process.env.PROVISION_WEBHOOK_SECRET;
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
         stripeSessionId: session.id,
         stripeCustomerId: session.customer ?? null,
         email: session.customer_details?.email ?? null,
+        isElite: (session as any).amount_total ? (session as any).amount_total >= 15000 : false,
       }),
     });
   }
