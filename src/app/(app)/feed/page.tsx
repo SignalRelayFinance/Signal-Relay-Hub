@@ -68,7 +68,7 @@ function CalendarCard({ event }: { event: SignalEvent }) {
   );
 }
 
-function EventCard({ event }: { event: SignalEvent }) {
+function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-white/60">
@@ -109,7 +109,7 @@ function EventCard({ event }: { event: SignalEvent }) {
       {event.trade_prediction && (
         <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 relative overflow-hidden">
           <div className="text-xs uppercase tracking-wide text-amber-400/70 mb-2">Elite — Trade predictions</div>
-          <div className="blur-sm pointer-events-none select-none">
+          <div className={isElite ? '' : 'blur-sm pointer-events-none select-none'}>
             {event.trade_prediction.trades?.map((t) => (
               <div key={t.pair} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-white/10">
                 <div className="flex items-center gap-2 mb-1.5">
@@ -132,13 +132,13 @@ function EventCard({ event }: { event: SignalEvent }) {
               <p className="text-xs text-white/50 border-t border-white/10 pt-2 mt-1">{event.trade_prediction.market_summary}</p>
             )}
           </div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 backdrop-blur-sm rounded-xl">
+         {!isElite && <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 backdrop-blur-sm rounded-xl">
             <div className="text-xs uppercase tracking-wide text-amber-400 mb-1">Elite feature</div>
             <div className="text-sm font-semibold text-white mb-3">AI trade predictions are Elite only</div>
             <a href="/pricing" className="rounded-full bg-amber-400 px-4 py-1.5 text-xs font-bold text-neutral-900 hover:bg-amber-300 transition-colors">
               Upgrade to Elite — £150/mo
             </a>
-          </div>
+          </div>}
         </div>
       )}
     </div>
@@ -151,7 +151,8 @@ export default function LiveFeedPage() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [status, setStatus] = useState<StatusPayload | null>(null);
+ const [status, setStatus] = useState<StatusPayload | null>(null);
+  const [isElite, setIsElite] = useState(false);
 
   const loadEvents = useCallback(async (tag: string, pageNum: number, replace: boolean) => {
     setLoading(true);
@@ -180,10 +181,18 @@ export default function LiveFeedPage() {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetch('/api/status');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (mounted) setStatus(data as StatusPayload);
+        const [statusRes, profileRes] = await Promise.all([
+          fetch('/api/status'),
+          fetch('/api/profile'),
+        ]);
+        if (statusRes.ok && mounted) {
+          const data = await statusRes.json();
+          setStatus(data as StatusPayload);
+        }
+        if (profileRes.ok && mounted) {
+          const profile = await profileRes.json();
+          setIsElite(profile.is_elite ?? false);
+        }
       } catch { /* ignore */ }
     })();
     return () => { mounted = false; };
@@ -273,7 +282,7 @@ export default function LiveFeedPage() {
           {signalEvents.length === 0 && !loading ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-white/50">No signals found{activeTag !== 'all' ? ` for tag: ${activeTag}` : ''}.</div>
           ) : (
-            signalEvents.map((event) => <EventCard key={event.id} event={event} />)
+            signalEvents.map((event) => <EventCard key={event.id} event={event} isElite={isElite} />)
           )}
           {loading && <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center text-sm text-white/50">Loading…</div>}
           {hasMore && !loading && signalEvents.length > 0 && (
