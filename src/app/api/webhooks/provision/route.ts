@@ -7,11 +7,11 @@ export async function POST(req: Request) {
     const got = req.headers.get('x-provision-secret');
     if (got !== secret) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
-
   const body = (await req.json().catch(() => null)) as {
     email?: string | null;
     stripeCustomerId?: string | null;
     stripeSessionId?: string;
+    isElite?: boolean;
   } | null;
 
   if (!body?.stripeSessionId) {
@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     email: body.email,
     stripeCustomerId: body.stripeCustomerId,
     stripeSessionId: body.stripeSessionId,
+    isElite: body.isElite ?? false,
   });
 
   return NextResponse.json({ ok: true, ...out });
