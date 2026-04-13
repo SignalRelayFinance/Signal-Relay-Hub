@@ -11,9 +11,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="relative">
           <header className="border-b border-white/10 bg-white/5 backdrop-blur sticky top-0 z-40">
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-              <Link href="/feed" className="text-sm font-semibold uppercase tracking-[0.3em] text-white">
-                Signal Relay Hub
-              </Link>
+             <Link href="/" className="text-sm font-semibold uppercase tracking-[0.3em] text-white">
+              Signal Relay Hub
+            </Link>
               <nav className="hidden md:flex items-center gap-4 text-sm text-white/80">
                 <Link className="hover:text-white" href="/feed">Live Feed</Link>
                 <Link className="hover:text-white" href="/markets">Markets</Link>
