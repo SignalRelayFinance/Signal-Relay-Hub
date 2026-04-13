@@ -16,26 +16,28 @@ export async function provisionForCheckoutSession(input: {
   email?: string | null;
   stripeCustomerId?: string | null;
   stripeSessionId: string;
+  isElite?: boolean;
 }) {
   if (!input.email) throw new Error('No email in checkout session');
-
   const supabase = getServiceClient();
   const apiKey = generateApiKey();
 
+  const updateData: Record<string, unknown> = {
+    email: input.email,
+    stripe_customer_id: input.stripeCustomerId ?? null,
+    stripe_session_id: input.stripeSessionId,
+    api_key: apiKey,
+    is_subscribed: true,
+  };
+
+  if (input.isElite) {
+    updateData.is_elite = true;
+  }
+
   const { error } = await supabase
     .from('profiles')
-    .upsert(
-      {
-        email: input.email,
-        stripe_customer_id: input.stripeCustomerId ?? null,
-        stripe_session_id: input.stripeSessionId,
-        api_key: apiKey,
-        is_subscribed: true,
-      },
-      { onConflict: 'email' }
-    );
+    .upsert(updateData, { onConflict: 'email' });
 
   if (error) throw new Error(`Supabase upsert failed: ${error.message}`);
-
   return { apiKey };
 }
