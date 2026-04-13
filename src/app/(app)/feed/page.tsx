@@ -107,35 +107,38 @@ function EventCard({ event }: { event: SignalEvent }) {
         </div>
       )}
       {event.trade_prediction && (
-        <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+        <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 relative overflow-hidden">
           <div className="text-xs uppercase tracking-wide text-amber-400/70 mb-2">Elite — Trade predictions</div>
-          {event.trade_prediction.trades?.map((t) => (
-            <div key={t.pair} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-white/10">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="font-mono text-xs font-bold text-white">{t.pair}</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.direction === 'long' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                  {t.direction === 'long' ? '▲ LONG' : '▼ SHORT'}
-                </span>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${t.conviction === 'high' ? 'bg-amber-500/20 text-amber-400' : t.conviction === 'medium' ? 'bg-white/10 text-white/60' : 'bg-white/5 text-white/40'}`}>
-                  {t.conviction} conviction
-                </span>
-                <span className="text-xs text-white/40">{t.timeframe}</span>
+          <div className="blur-sm pointer-events-none select-none">
+            {event.trade_prediction.trades?.map((t) => (
+              <div key={t.pair} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-white/10">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="font-mono text-xs font-bold text-white">{t.pair}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.direction === 'long' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                    {t.direction === 'long' ? '▲ LONG' : '▼ SHORT'}
+                  </span>
+                  <span className="rounded-full px-2 py-0.5 text-xs bg-amber-500/20 text-amber-400">{t.conviction} conviction</span>
+                  <span className="text-xs text-white/40">{t.timeframe}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs mb-1.5">
+                  <div><span className="text-white/40">Entry </span><span className="text-white/80 font-mono">{t.entry_zone}</span></div>
+                  <div><span className="text-white/40">Target </span><span className="text-emerald-400 font-mono">{t.target}</span></div>
+                  <div><span className="text-white/40">Stop </span><span className="text-rose-400 font-mono">{t.stop_loss}</span></div>
+                </div>
+                <p className="text-xs text-white/60">{t.thesis}</p>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs mb-1.5">
-                <div><span className="text-white/40">Entry </span><span className="text-white/80 font-mono">{t.entry_zone}</span></div>
-                <div><span className="text-white/40">Target </span><span className="text-emerald-400 font-mono">{t.target}</span></div>
-                <div><span className="text-white/40">Stop </span><span className="text-rose-400 font-mono">{t.stop_loss}</span></div>
-              </div>
-              <p className="text-xs text-white/60">{t.thesis}</p>
-              <p className="text-xs text-white/40 mt-0.5">Risk: {t.key_risks}</p>
-            </div>
-          ))}
-          {event.trade_prediction.market_summary && (
-            <p className="text-xs text-white/50 border-t border-white/10 pt-2 mt-1">{event.trade_prediction.market_summary}</p>
-          )}
-          {event.trade_prediction.do_not_trade && (
-            <p className="text-xs text-rose-400/60 mt-1">Avoid: {event.trade_prediction.do_not_trade}</p>
-          )}
+            ))}
+            {event.trade_prediction.market_summary && (
+              <p className="text-xs text-white/50 border-t border-white/10 pt-2 mt-1">{event.trade_prediction.market_summary}</p>
+            )}
+          </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 backdrop-blur-sm rounded-xl">
+            <div className="text-xs uppercase tracking-wide text-amber-400 mb-1">Elite feature</div>
+            <div className="text-sm font-semibold text-white mb-3">AI trade predictions are Elite only</div>
+            <a href="/pricing" className="rounded-full bg-amber-400 px-4 py-1.5 text-xs font-bold text-neutral-900 hover:bg-amber-300 transition-colors">
+              Upgrade to Elite — £150/mo
+            </a>
+          </div>
         </div>
       )}
     </div>
