@@ -39,6 +39,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <main className="mx-auto max-w-6xl px-6 py-10 text-neutral-900">
             <div className="space-y-8">{children}</div>
           </main>
+          <footer className="border-t border-white/10 py-6 text-center text-xs text-white/40">
+            <div className="flex items-center justify-center gap-4">
+              <span>© 2026 Signal Relay Hub</span>
+              <a href="/privacy" className="hover:text-white/70 transition-colors">Privacy Policy</a>
+              <a href="/pricing" className="hover:text-white/70 transition-colors">Pricing</a>
+            </div>
+          </footer>
         </div>
       </div>
     </AuthProvider>
