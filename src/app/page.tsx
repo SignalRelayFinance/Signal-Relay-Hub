@@ -215,9 +215,14 @@ export default function LandingPage() {
         <header className="flex items-center justify-between">
           <div className="text-lg font-semibold">Signal Relay Hub</div>
           <nav className="flex items-center gap-4 text-sm text-neutral-300">
-            <Link className="rounded-full bg-white px-4 py-2 text-neutral-900 hover:bg-neutral-200" href="/login">
-              Get started
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link className="text-sm text-white/70 hover:text-white transition-colors" href="/login">
+                Sign in
+              </Link>
+              <Link className="rounded-full bg-white px-4 py-2 text-sm text-neutral-900 hover:bg-neutral-200" href="/pricing">
+                Get started
+              </Link>
+            </div>
           </nav>
         </header>
 
@@ -236,8 +241,8 @@ export default function LandingPage() {
                 or pricing change hits, we push it to Telegram, email, and your API stack within minutes.
               </p>
               <div className="mt-8 flex flex-wrap justify-center sm:justify-start gap-4">
-                <Link href="/login" className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200">
-                  Start free trial — £45/mo
+                <Link href="/pricing" className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200">
+                  Explore free options
                 </Link>
                 <Link href="/feed" className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10">
                   View live feed
