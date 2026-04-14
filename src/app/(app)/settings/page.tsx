@@ -34,16 +34,17 @@ export default async function AccountSettingsPage() {
   let planDescription = 'Free access - view feed, markets and economic calendar.';
 
   if (profile?.is_elite) {
-    planName = 'Elite - 150/month';
+    planName = 'Elite - 150 per month';
     planColor = 'border-amber-400/40 bg-amber-400/5';
     planLabel = 'text-amber-300';
     planDescription = 'Full Elite access - AI trade predictions, daily briefing, priority alerts.';
   } else if (profile?.is_subscribed) {
-    planName = 'Pro - 45/month';
+    planName = 'Pro - 45 per month';
     planColor = 'border-sky-400/40 bg-sky-400/5';
     planLabel = 'text-sky-300';
     planDescription = 'Pro access - Flash SEC alerts, Telegram, API key, pairs analysis.';
   }
+
   return (
     <div className="space-y-8">
       <section className="rounded-3xl bg-neutral-950 p-8 text-white shadow-xl">
@@ -72,27 +73,18 @@ export default async function AccountSettingsPage() {
               ))}
             </div>
           )}
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
             {profile?.stripe_customer_id ? (
-              
-                href="/api/stripe/portal"
-                className="rounded-full bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-white/90 transition-colors"
-              >
+              <a href="/api/stripe/portal" className="rounded-full bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-white/90 transition-colors">
                 Manage billing
               </a>
             ) : (
-              
-                href="/pricing"
-                className="rounded-full bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-white/90 transition-colors"
-              >
+              <a href="/pricing" className="rounded-full bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-white/90 transition-colors">
                 {profile?.is_subscribed ? 'View plans' : 'Explore plans'}
               </a>
             )}
             {!profile?.is_elite && (
-              
-                href="/pricing"
-                className="rounded-full border border-amber-400/40 px-4 py-2 text-sm font-medium text-amber-300 hover:bg-amber-400/10 transition-colors"
-              >
+              <a href="/pricing" className="rounded-full border border-amber-400/40 px-4 py-2 text-sm font-medium text-amber-300 hover:bg-amber-400/10 transition-colors">
                 Upgrade to Elite
               </a>
             )}
