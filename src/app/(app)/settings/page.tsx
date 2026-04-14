@@ -28,7 +28,7 @@ export default async function AccountSettingsPage() {
   }
   const automationBase = process.env.NEXT_PUBLIC_APP_URL ?? 'https://signalrelayhub.io';
 
-  const planName = profile?.is_elite ? 'Elite - £150/month' : profile?.is_subscribed ? 'Pro - £45/month' : 'Free plan';
+  const planName = profile?.is_elite ? 'Elite - 150/month' : profile?.is_subscribed ? 'Pro - 45/month' : 'Free plan';
   const planColor = profile?.is_elite ? 'border-amber-400/40 bg-amber-400/5' : profile?.is_subscribed ? 'border-sky-400/40 bg-sky-400/5' : 'border-white/10 bg-white/5';
   const planLabel = profile?.is_elite ? 'text-amber-300' : profile?.is_subscribed ? 'text-sky-300' : 'text-white/50';
   const planDescription = profile?.is_elite
