@@ -34,8 +34,8 @@ export default async function AccountSettingsPage() {
   const planDescription = profile?.is_elite
     ? 'Full Elite access — AI trade predictions, daily briefing, priority alerts.'
     : profile?.is_subscribed
-    ? 'Pro access — Flash SEC alerts, Telegram, API key, pairs analysis.'
-    : 'Free access — view feed, markets and economic calendar.';
+      ? 'Pro access — Flash SEC alerts, Telegram, API key, pairs analysis.'
+      : 'Free access — view feed, markets and economic calendar.';
 
   return (
     <div className="space-y-8">
