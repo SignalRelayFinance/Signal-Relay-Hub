@@ -333,6 +333,7 @@ export default function LandingPage() {
         <footer className="mt-auto border-t border-white/5 pt-6 text-xs text-white/60">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <span>© {new Date().getFullYear()} Signal Relay Hub · Built for fintech operators & traders.</span>
+<p className="mt-2 text-white/30 text-xs max-w-2xl">Risk disclaimer: All signals and analysis provided by Signal Relay Hub are for informational purposes only and do not constitute financial advice. Trading involves significant risk and you may lose more than your initial investment. Always do your own research. Signal Relay Hub accepts no liability for any losses incurred.</p>
             <div className="flex gap-4">
               <Link href="/privacy" className="hover:text-white/80 transition-colors">Privacy Policy</Link>
               <a href="https://t.me/signalrelayhub" target="_blank" rel="noreferrer" className="hover:text-white/80 transition-colors">Telegram</a>
