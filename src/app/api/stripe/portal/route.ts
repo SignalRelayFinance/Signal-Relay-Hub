@@ -33,6 +33,11 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL('/pricing', req.url));
   }
 
+  // Check if customer ID is from old test account
+  if (profile.stripe_customer_id.startsWith('cus_UFG')) {
+    return NextResponse.redirect(new URL('/pricing', req.url));
+  }
+
   let stripe;
   try {
     stripe = getStripe();
