@@ -45,10 +45,10 @@ export default async function AccountSettingsPage() {
             {profile?.is_subscribed ? 'Billing handled via Stripe. Manage or cancel anytime.' : 'Unlock Flash SEC push delivery and API access.'}
           </p>
           <a 
-            href={profile?.is_subscribed ? '/api/stripe/portal' : '/api/stripe/checkout'} 
+            href={profile?.is_subscribed ? '/api/stripe/portal' : '/pricing'}
             className="mt-4 inline-flex rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
           >
-            {profile?.is_subscribed ? 'Manage billing' : 'Subscribe now'}
+            {profile?.is_subscribed ? 'Manage billing' : 'Explore plans'}
           </a>
         </div>
         <div className="rounded-3xl border border-white/10 bg-white p-5 shadow">
