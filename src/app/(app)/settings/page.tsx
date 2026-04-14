@@ -28,22 +28,32 @@ export default async function AccountSettingsPage() {
   }
   const automationBase = process.env.NEXT_PUBLIC_APP_URL ?? 'https://signalrelayhub.io';
 
-  let planName = 'Free plan';
-  let planColor = 'border-white/10 bg-white/5';
-  let planLabel = 'text-white/50';
-  let planDescription = 'Free access - view feed, markets and economic calendar.';
+ const plans: Record<string, { name: string; color: string; label: string; description: string }> = {
+    elite: {
+      name: 'Elite - 150 per month',
+      color: 'border-amber-400/40 bg-amber-400/5',
+      label: 'text-amber-300',
+      description: 'Full Elite access - AI trade predictions, daily briefing, priority alerts.',
+    },
+    pro: {
+      name: 'Pro - 45 per month',
+      color: 'border-sky-400/40 bg-sky-400/5',
+      label: 'text-sky-300',
+      description: 'Pro access - Flash SEC alerts, Telegram, API key, pairs analysis.',
+    },
+    free: {
+      name: 'Free plan',
+      color: 'border-white/10 bg-white/5',
+      label: 'text-white/50',
+      description: 'Free access - view feed, markets and economic calendar.',
+    },
+  };
 
-  if (profile?.is_elite) {
-    planName = 'Elite - 150 per month';
-    planColor = 'border-amber-400/40 bg-amber-400/5';
-    planLabel = 'text-amber-300';
-    planDescription = 'Full Elite access - AI trade predictions, daily briefing, priority alerts.';
-  } else if (profile?.is_subscribed) {
-    planName = 'Pro - 45 per month';
-    planColor = 'border-sky-400/40 bg-sky-400/5';
-    planLabel = 'text-sky-300';
-    planDescription = 'Pro access - Flash SEC alerts, Telegram, API key, pairs analysis.';
-  }
+  const tier = profile?.is_elite ? 'elite' : profile?.is_subscribed ? 'pro' : 'free';
+  const planName = plans[tier].name;
+  const planColor = plans[tier].color;
+  const planLabel = plans[tier].label;
+  const planDescription = plans[tier].description;
 
   return (
     <div className="space-y-8">
