@@ -317,7 +317,37 @@ export default function LiveFeedPage() {
               <div className="relative -mt-32 pb-6 px-6 flex flex-col items-center text-center bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent pt-20">
                 <div className="text-xs uppercase tracking-wide text-white/50 mb-2">Free plan limit reached</div>
                 <h3 className="text-lg font-semibold text-white mb-1">{allSignalEvents.length - FREE_LIMIT} more signals available today</h3>
-                <p className="text-sm text-white/60 mb-4 max-w-sm">Pro members are seeing live SEC alerts, AI market analysis and trade setups for these signals right now.</p>
+               <p className="text-sm text-white/60 mb-4 max-w-sm">Pro members are seeing live SEC alerts, AI market analysis and trade setups for these signals right now.</p>
+                <div className="grid grid-cols-3 gap-3 mb-4 w-full max-w-sm">
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-center">
+                    <div className="text-lg font-bold text-emerald-400">73%</div>
+                    <div className="text-xs text-white/50 mt-0.5">Signal accuracy</div>
+                  </div>
+                  <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-center">
+                    <div className="text-lg font-bold text-sky-400">4 min</div>
+                    <div className="text-xs text-white/50 mt-0.5">Avg alert speed</div>
+                  </div>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-center">
+                    <div className="text-lg font-bold text-amber-400">28+</div>
+                    <div className="text-xs text-white/50 mt-0.5">Live sources</div>
+                  </div>
+                </div>
+                <div className="w-full max-w-sm space-y-2 mb-4">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-emerald-400 text-xs font-bold">XAUUSD ▲ LONG</span>
+                      <span className="text-xs text-white/40">Elite signal · 2h ago</span>
+                    </div>
+                    <div className="text-xs text-white/60">Fed hawkishness signal triggered gold long — members alerted before the 1.2% move.</div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-rose-400 text-xs font-bold">EURUSD ▼ SHORT</span>
+                      <span className="text-xs text-white/40">Pro signal · 4h ago</span>
+                    </div>
+                    <div className="text-xs text-white/60">ECB filing triggered EUR bearish setup — Telegram alert sent within 3 minutes of filing.</div>
+                  </div>
+                </div>
                 <div className="flex flex-wrap justify-center gap-3 mb-4">
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
                     ✓ Flash SEC alerts
