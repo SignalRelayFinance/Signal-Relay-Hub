@@ -1,114 +1,214 @@
 /* eslint-disable react/no-unescaped-entities */
-import React from 'react';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import React, { useState, useEffect } from 'react';
 
-export default async function DigestArchivePage() {
-  const cookieStore = await cookies();
+type DigestEvent = {
+  id: string;
+  title: string;
+  company: string;
+  primary_tag: string;
+  impact_score: number;
+  published: string;
+  fetched_at: string;
+  link: string;
+  summary: string;
+};
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() {},
-      },
+function formatDisplayDate(dateStr: string) {
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(dateStr + 'T12:00:00'));
+}
+
+function toLocalDateStr(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+export default function DigestArchivePage() {
+  const today = toLocalDateStr(new Date());
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [events, setEvents] = useState<DigestEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchDates() {
+      const res = await fetch('/api/events?limit=500');
+      if (!res.ok) return;
+      const data = await res.json();
+      const dates = new Set<string>();
+      for (const event of data.events ?? []) {
+        const raw = event.published_at ?? event.fetched_at;
+        if (raw) {
+          const d = new Date(raw);
+          if (!isNaN(d.getTime())) dates.add(toLocalDateStr(d));
+        }
+      }
+      setAvailableDates(Array.from(dates).sort((a, b) => b.localeCompare(a)));
     }
-  );
+    fetchDates();
+  }, []);
 
-  const { data: events } = await supabase
-    .from('sf_events')
-    .select('id, title, company, primary_tag, impact_score, published, fetched_at, link, summary')
-    .order('fetched_at', { ascending: false })
-    .limit(200);
+  useEffect(() => {
+    async function fetchEvents() {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/events?limit=500');
+        if (!res.ok) return;
+        const data = await res.json();
+        const filtered = (data.events ?? []).filter((e: DigestEvent) => {
+          const raw = e.published_at ?? e.fetched_at;
+          if (!raw) return false;
+          const d = new Date(raw);
+          return !isNaN(d.getTime()) && toLocalDateStr(d) === selectedDate;
+        });
+        setEvents(filtered);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEvents();
+  }, [selectedDate]);
 
-  const byDate: Record<string, typeof events> = {};
-  for (const event of events ?? []) {
-    const raw = event.published ?? event.fetched_at;
-    const parsed = raw ? new Date(raw) : null;
-    const date = parsed && !isNaN(parsed.getTime()) ? parsed.toISOString().slice(0, 10) : 'unknown';
-    if (!byDate[date]) byDate[date] = [];
-    byDate[date]!.push(event);
-  }
-
-  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  const signalEvents = events.filter(e => (e as any).company !== 'Forex Factory');
+  const calendarEvents = events.filter(e => (e as any).company === 'Forex Factory');
+  const topTags = Array.from(new Set(signalEvents.map(e => e.primary_tag).filter(Boolean))).slice(0, 5);
+  const companies = Array.from(new Set(signalEvents.map(e => e.company).filter(Boolean))).slice(0, 6);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <section className="rounded-3xl bg-neutral-950 p-8 text-white shadow-xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-white/50">Digest archive</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-white/50">Digest Archive</p>
         <h1 className="mt-3 text-3xl font-semibold">Daily recaps of market-moving signals.</h1>
         <p className="mt-3 text-sm text-white/70">
-          Each digest bundles SEC filings, product launches, and regulatory notes into a daily brief. Pull
-          highlights for your team or push the archive to BI tooling.
+          Pick a date to see all signals, SEC filings, and economic events from that day. Use the calendar to browse history or jump to today.
         </p>
       </section>
-      {dates.length === 0 ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5 text-sm text-neutral-600">
-          No digests yet.
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="text-xs uppercase tracking-wide text-white/50">Select date</div>
+            <input
+              type="date"
+              value={selectedDate}
+              max={today}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30 [color-scheme:dark]"
+            />
+          </div>
+          <button
+            onClick={() => setSelectedDate(today)}
+            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${selectedDate === today ? 'bg-white text-neutral-900' : 'border border-white/20 text-white/70 hover:bg-white/10'}`}
+          >
+            Today
+          </button>
+          <div className="flex flex-wrap gap-2">
+            {availableDates.slice(0, 7).map((date) => (
+              <button
+                key={date}
+                onClick={() => setSelectedDate(date)}
+                className={`rounded-full px-3 py-1 text-xs transition-colors ${selectedDate === date ? 'bg-white text-neutral-900' : 'border border-white/10 text-white/50 hover:bg-white/10'}`}
+              >
+                {new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-sm text-white/50">
+          Loading signals...
         </div>
       ) : (
-        <div className="space-y-6">
-          {dates.map((date) => {
-            const dayEvents = byDate[date] ?? [];
-            const topTags = Array.from(new Set(dayEvents.map((e) => e.primary_tag).filter(Boolean))).slice(0, 4);
-            const companies = Array.from(new Set(dayEvents.map((e) => e.company).filter(Boolean))).slice(0, 5);
-            const allCompanies = Array.from(new Set(dayEvents.map((e) => e.company)));
-            return (
-              <div key={date} className="rounded-3xl border border-white/10 bg-neutral-950 p-6 text-white shadow-lg">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="text-sm uppercase tracking-[0.3em] text-white/50">{date === 'unknown' ? 'Unknown date' : new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(date + 'T12:00:00'))}</div>
-                    <div className="mt-2 text-lg font-semibold text-white">
-                      {dayEvents.length} signal{dayEvents.length !== 1 ? 's' : ''} — {companies.join(', ')}
-                      {companies.length < allCompanies.length ? '…' : ''}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    {topTags.map((tag) => (
-                      <span key={tag} className="rounded-full border border-white/20 px-3 py-1 text-white/80">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-neutral-950 p-5 text-white">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-white/50">
+                  {formatDisplayDate(selectedDate)}
                 </div>
-                <div className="mt-5 space-y-3">
-                  {dayEvents.slice(0, 5).map((event, idx) => (
-                    <div key={event.id ?? idx} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-white/70">
+                <div className="mt-1 text-lg font-semibold">
+                  {signalEvents.length} signal{signalEvents.length !== 1 ? 's' : ''}
+                  {calendarEvents.length > 0 && ` + ${calendarEvents.length} economic events`}
+                </div>
+                {companies.length > 0 && (
+                  <div className="mt-1 text-xs text-white/50">{companies.join(', ')}</div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {topTags.map((tag) => (
+                  <span key={tag} className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-white/60">{tag}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {signalEvents.length === 0 && calendarEvents.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+              <div className="text-white/50 text-sm">No signals found for {formatDisplayDate(selectedDate)}</div>
+              <p className="mt-2 text-xs text-white/30">Try selecting a different date using the calendar above.</p>
+            </div>
+          ) : (
+            <>
+              {signalEvents.length > 0 && (
+                <div className="space-y-3">
+                  <div className="text-xs uppercase tracking-wide text-white/40 px-1">Signals</div>
+                  {signalEvents.map((event, idx) => (
+                    <div key={event.id ?? idx} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
                         <span className="font-semibold text-white">{event.company}</span>
                         {event.primary_tag && (
-                          <span className="rounded-full bg-white/10 px-2 py-0.5">{event.primary_tag}</span>
+                          <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-200">{event.primary_tag}</span>
                         )}
                         {event.impact_score && (
-                          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-200">
-                            Impact {event.impact_score}
-                          </span>
+                          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-200">Impact {event.impact_score}</span>
                         )}
+                        <span className="text-white/30">
+                          {event.published ? new Date(event.published).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-white line-clamp-1">{event.title}</div>
-                          {event.summary && <div className="mt-1 text-xs text-white/60 line-clamp-2">{event.summary}</div>}
+                      <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-white">{event.title}</div>
+                          {event.summary && <div className="mt-1 text-xs text-white/50 line-clamp-2">{event.summary}</div>}
                         </div>
                         {event.link && (
-                          <a href={event.link} target="_blank" rel="noreferrer" className="text-xs text-sky-300 hover:text-sky-200">
+                          <a href={event.link} target="_blank" rel="noreferrer" className="text-xs text-sky-400 hover:text-sky-300 shrink-0">
                             Source →
                           </a>
                         )}
                       </div>
                     </div>
                   ))}
-                  {dayEvents.length > 5 && (
-                    <div className="text-xs text-white/60">+{dayEvents.length - 5} more signals logged for this day</div>
-                  )}
                 </div>
-              </div>
-            );
-          })}
+              )}
+
+              {calendarEvents.length > 0 && (
+                <div className="space-y-3">
+                  <div className="text-xs uppercase tracking-wide text-white/40 px-1">Economic events</div>
+                  {calendarEvents.map((event, idx) => (
+                    <div key={event.id ?? idx} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-white">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-white/40">
+                          {event.published ? new Date(event.published).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                        <span className="text-sm font-medium">{event.title}</span>
+                        {event.impact_score && (
+                          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-200 ml-auto">Impact {event.impact_score}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
