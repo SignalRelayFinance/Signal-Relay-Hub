@@ -60,7 +60,9 @@ export default async function AccountSettingsPage() {
       <section className="rounded-3xl bg-neutral-950 p-8 text-white shadow-xl">
         <p className="text-xs uppercase tracking-[0.3em] text-white/50">Account</p>
         <h1 className="mt-3 text-3xl font-semibold">Manage your plan, API keys, and alerts.</h1>
-        <p className="mt-3 text-sm text-white/70">Signed in as {user?.email ?? 'unknown user'}.</p>
+       <p className="mt-3 text-sm text-white/70">
+          {profile?.stripe_customer_id ? 'Welcome back' : 'Welcome to Signal Relay Hub'} — signed in as {user?.email ?? 'unknown user'}.
+        </p>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
