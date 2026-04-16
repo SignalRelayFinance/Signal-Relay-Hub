@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV_LINKS = [
-  { href: '/feed', label: '📡 Live Feed' },
-  { href: '/markets', label: '📊 Markets' },
-  { href: '/digests', label: '📅 Digest Archive' },
-  { href: '/drip-queue', label: '📤 Social Drip Queue' },
-  { href: '/pricing', label: '💳 Pricing' },
-  { href: '/settings', label: '⚙️ Account' },
-  { href: '/privacy', label: '🔒 Privacy Policy' },
+  { href: '/feed', label: 'Live Feed' },
+  { href: '/markets', label: 'Markets' },
+  { href: '/digests', label: 'Digest Archive' },
+  { href: '/drip-queue', label: 'Social Drip Queue' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/settings', label: 'Account' },
+  { href: '/privacy', label: 'Privacy Policy' },
 ];
 
 export function MobileNav({ userEmail, onSignOut }: { userEmail?: string | null; onSignOut?: () => void }) {
