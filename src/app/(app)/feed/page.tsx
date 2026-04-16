@@ -153,7 +153,8 @@ export default function LiveFeedPage() {
   const [hasMore, setHasMore] = useState(true);
  const [status, setStatus] = useState<StatusPayload | null>(null);
   const [isElite, setIsElite] = useState(false);
-
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const loadEvents = useCallback(async (tag: string, pageNum: number, replace: boolean) => {
     setLoading(true);
     try {
@@ -189,9 +190,11 @@ export default function LiveFeedPage() {
           const data = await statusRes.json();
           setStatus(data as StatusPayload);
         }
-        if (profileRes.ok && mounted) {
+       if (profileRes.ok && mounted) {
           const profile = await profileRes.json();
           setIsElite(profile.is_elite ?? false);
+          setIsSubscribed(profile.is_subscribed ?? false);
+          setProfileLoaded(true);
         }
       } catch { /* ignore */ }
     })();
@@ -205,7 +208,10 @@ export default function LiveFeedPage() {
   }
 
   const calendarEvents = events.filter((e) => e.company === 'Forex Factory');
-  const signalEvents = events.filter((e) => e.company !== 'Forex Factory');
+  const allSignalEvents = events.filter((e) => e.company !== 'Forex Factory');
+  const FREE_LIMIT = 5;
+  const signalEvents = isSubscribed ? allSignalEvents : allSignalEvents.slice(0, FREE_LIMIT);
+  const isGated = !isSubscribed && allSignalEvents.length > FREE_LIMIT;
   const regulatoryCount = signalEvents.filter((e) => e.primary_tag === 'regulatory').length;
   const avgImpact = signalEvents.length ? (signalEvents.reduce((sum, e) => sum + (e.impact_score ?? 0), 0) / signalEvents.length).toFixed(1) : '—';
   const flashStatus = status?.collectors?.flash_sec;
@@ -285,7 +291,60 @@ export default function LiveFeedPage() {
             signalEvents.map((event) => <EventCard key={event.id} event={event} isElite={isElite} />)
           )}
           {loading && <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center text-sm text-white/50">Loading…</div>}
-          {hasMore && !loading && signalEvents.length > 0 && (
+          {isGated && profileLoaded && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+              <div className="blur-sm pointer-events-none select-none p-4 space-y-3">
+                {allSignalEvents.slice(FREE_LIMIT, FREE_LIMIT + 3).map((event) => (
+                  <div key={event.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white">{event.company}</span>
+                      {event.primary_tag && <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-200">{event.primary_tag}</span>}
+                      {event.impact_score && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-200">Impact {event.impact_score}</span>}
+                    </div>
+                    <div className="text-sm font-medium text-white">{event.title}</div>
+                    {event.pairs_analysis && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {event.pairs_analysis.pairs?.slice(0, 3).map((p) => (
+                          <span key={p.pair} className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-white/60">
+                            {p.pair} {p.direction === 'bullish' ? '▲' : '▼'}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="relative -mt-32 pb-6 px-6 flex flex-col items-center text-center bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent pt-20">
+                <div className="text-xs uppercase tracking-wide text-white/50 mb-2">Free plan limit reached</div>
+                <h3 className="text-lg font-semibold text-white mb-1">{allSignalEvents.length - FREE_LIMIT} more signals available today</h3>
+                <p className="text-sm text-white/60 mb-4 max-w-sm">Pro members are seeing live SEC alerts, AI market analysis and trade setups for these signals right now.</p>
+                <div className="flex flex-wrap justify-center gap-3 mb-4">
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+                    ✓ Flash SEC alerts
+                  </div>
+                  <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-xs text-sky-300">
+                    ✓ Telegram push alerts
+                  </div>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                    ✓ AI trade predictions
+                  </div>
+                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-300">
+                    ✓ Market pair analysis
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <a href="/pricing" className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">
+                    Upgrade to Pro — £45/mo
+                  </a>
+                  <a href="/pricing" className="rounded-full border border-amber-400/40 bg-amber-400/10 px-5 py-2 text-sm font-medium text-amber-300 hover:bg-amber-400/20 transition-colors">
+                    Get Elite — £150/mo
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!isGated && hasMore && !loading && signalEvents.length > 0 && (
             <div className="flex justify-center pt-2">
               <button onClick={loadMore} className="rounded-full border border-white/20 px-6 py-2 text-sm font-medium text-white/70 hover:bg-white/10">
                 Load more signals
