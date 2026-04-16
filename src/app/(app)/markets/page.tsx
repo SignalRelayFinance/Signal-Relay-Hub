@@ -29,6 +29,27 @@ const CATEGORY_PAIRS: Record<string, string[]> = {
   commodities: ['USOIL'],
 };
 
+function getImpactLabel(score: number): string {
+  if (score >= 5) return 'Critical — immediate market reaction likely';
+  if (score >= 4) return 'High — significant market relevance';
+  if (score >= 3) return 'Moderate — watch for follow-through';
+  if (score >= 2) return 'Low — minor market relevance';
+  return 'Informational only';
+}
+
+function getImpactColor(score: number): string {
+  if (score >= 5) return 'border-rose-500/30 bg-rose-500/10 text-rose-300';
+  if (score >= 4) return 'border-amber-500/30 bg-amber-500/10 text-amber-300';
+  if (score >= 3) return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300';
+  return 'border-white/10 bg-white/5 text-white/40';
+}
+
+function getSentimentLabel(sentiment: string): string {
+  if (sentiment === 'positive') return 'Bullish — markets likely to react positively';
+  if (sentiment === 'negative') return 'Bearish — markets likely to react negatively';
+  return 'Neutral — monitoring for follow-up signals';
+}
+
 function getSymbol(symbol: string): string {
   if (symbol === 'XAUUSD') return 'OANDA:XAUUSD';
   if (symbol === 'BTCUSD') return 'BITSTAMP:BTCUSD';
@@ -168,6 +189,20 @@ export default function MarketsPage() {
         <p className="text-xs uppercase tracking-[0.3em] text-white/60">Markets</p>
         <h1 className="mt-3 text-3xl font-semibold leading-tight">Live prices + signal impact.</h1>
         <p className="mt-3 text-sm text-white/70">Track how breaking signals move crypto, forex, metals and commodities in real time.</p>
+        <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-white/60">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="font-semibold text-white mb-1">Impact score</div>
+            <div>Rates 1-5 how likely a signal is to move markets. Impact 4-5 signals are high priority.</div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="font-semibold text-white mb-1">Sentiment</div>
+            <div>Bullish = positive for price. Bearish = negative. Neutral = informational, watch for follow-up.</div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="font-semibold text-white mb-1">Market pairs</div>
+            <div>Shows which forex, crypto or commodity pairs are affected and in which direction.</div>
+          </div>
+        </div>
         <div className="mt-6 w-full overflow-hidden rounded-2xl border border-white/10">
           <TradingViewTicker />
         </div>
@@ -184,7 +219,10 @@ export default function MarketsPage() {
 
       <section className="rounded-3xl border border-white/10 bg-neutral-950 p-6 text-white">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <h2 className="text-xl font-semibold">Signal impact on markets</h2>
+          <div>
+            <h2 className="text-xl font-semibold">Signal impact on markets</h2>
+            <p className="text-xs text-white/50 mt-1">AI-analysed signals mapped to affected trading pairs</p>
+          </div>
           <div className="flex flex-wrap gap-3">
             <div className="flex flex-wrap gap-1">
               {CATEGORIES.map((cat) => (
@@ -195,8 +233,8 @@ export default function MarketsPage() {
             </div>
             <div className="flex flex-wrap gap-1">
               {['all', 'positive', 'neutral', 'negative'].map((s) => (
-                <button key={s} onClick={() => setSentiment(s)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${sentiment === s ? (s === 'positive' ? 'bg-emerald-500 text-white' : s === 'negative' ? 'bg-rose-500 text-white' : 'bg-white text-neutral-900') : 'bg-white/10 text-white hover:bg-white/20'}`}>
-                  {s === 'positive' ? 'Bullish' : s === 'negative' ? 'Bearish' : s === 'neutral' ? 'Neutral' : 'All'}
+                <button key={s} onClick={() => setSentiment(s)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${sentiment === s ? (s === 'positive' ? 'bg-emerald-500 text-white' : s === 'negative' ? 'bg-rose-500 text-white' : 'bg-white text-neutral-900') : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                  {s === 'positive' ? '▲ Bullish' : s === 'negative' ? '▼ Bearish' : s === 'neutral' ? '— Neutral' : 'All'}
                 </button>
               ))}
             </div>
@@ -210,32 +248,51 @@ export default function MarketsPage() {
           <div className="space-y-3">
             {filteredEvents.map((event) => (
               <div key={event.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-white/50 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-white/80">{event.company}</span>
-                    {event.primary_tag && <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-200">{event.primary_tag}</span>}
-                    {event.impact_score && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-200">Impact {event.impact_score}</span>}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium text-white/80">{event.company}</span>
+                    {event.primary_tag && <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-200">{event.primary_tag}</span>}
+                    {event.published_at && (
+                      <span className="text-xs font-mono text-white/30">
+                        {new Date(event.published_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
                   </div>
-                  <span className={`font-semibold ${event.sentiment === 'positive' ? 'text-emerald-400' : event.sentiment === 'negative' ? 'text-rose-400' : 'text-white/50'}`}>
-                    {event.sentiment === 'positive' ? '▲' : event.sentiment === 'negative' ? '▼' : '—'} {event.sentiment}
-                  </span>
                 </div>
                 <a href={event.source_url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-white hover:text-sky-200">{event.title}</a>
+                {event.summary && <p className="mt-1 text-xs text-white/50 line-clamp-2">{event.summary}</p>}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {event.impact_score && (
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${getImpactColor(event.impact_score)}`}>
+                      Impact {event.impact_score}/5 — {getImpactLabel(event.impact_score)}
+                    </span>
+                  )}
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    event.sentiment === 'positive' ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300' :
+                    event.sentiment === 'negative' ? 'border border-rose-500/30 bg-rose-500/10 text-rose-300' :
+                    'border border-white/10 bg-white/5 text-white/40'
+                  }`}>
+                    {event.sentiment === 'positive' ? '▲' : event.sentiment === 'negative' ? '▼' : '—'} {getSentimentLabel(event.sentiment)}
+                  </span>
+                </div>
                 {event.pairs_analysis ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {event.pairs_analysis.pairs?.map((p) => (
-                      <div key={p.pair} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                        <span className="text-xs font-mono font-medium text-white">{p.pair}</span>
-                        <span className={`text-xs font-bold ${p.direction === 'bullish' ? 'text-emerald-400' : p.direction === 'bearish' ? 'text-rose-400' : 'text-white/50'}`}>
-                          {p.direction === 'bullish' ? '▲' : p.direction === 'bearish' ? '▼' : '—'}{'●'.repeat(p.strength)}
-                        </span>
-                        <span className="text-xs text-white/40">{p.reason}</span>
-                      </div>
-                    ))}
-                    {event.pairs_analysis.overall && <p className="w-full mt-1 text-xs text-white/50">{event.pairs_analysis.overall}</p>}
+                  <div className="mt-3">
+                    <div className="text-xs text-white/30 uppercase tracking-wide mb-2">Affected pairs</div>
+                    <div className="flex flex-wrap gap-2">
+                      {event.pairs_analysis.pairs?.map((p) => (
+                        <div key={p.pair} className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 ${p.direction === 'bullish' ? 'border-emerald-500/20 bg-emerald-500/5' : p.direction === 'bearish' ? 'border-rose-500/20 bg-rose-500/5' : 'border-white/10 bg-white/5'}`}>
+                          <span className="text-xs font-mono font-bold text-white">{p.pair}</span>
+                          <span className={`text-xs font-bold ${p.direction === 'bullish' ? 'text-emerald-400' : p.direction === 'bearish' ? 'text-rose-400' : 'text-white/50'}`}>
+                            {p.direction === 'bullish' ? '▲' : p.direction === 'bearish' ? '▼' : '—'}{'●'.repeat(p.strength)}
+                          </span>
+                          <span className="text-xs text-white/40">{p.reason}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {event.pairs_analysis.overall && <p className="mt-2 text-xs text-white/50 italic">{event.pairs_analysis.overall}</p>}
                   </div>
                 ) : (
-                  <div className="mt-2 text-xs text-white/30">Market pair analysis pending next pipeline run</div>
+                  <div className="mt-2 text-xs text-white/20 italic">Pair analysis queued for next pipeline run</div>
                 )}
               </div>
             ))}
