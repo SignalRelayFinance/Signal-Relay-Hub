@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
 
 const NAV_LINKS = [
   { href: '/feed', label: 'Live Feed' },
@@ -13,9 +14,25 @@ const NAV_LINKS = [
   { href: '/privacy', label: 'Privacy Policy' },
 ];
 
-export function MobileNav({ userEmail, onSignOut }: { userEmail?: string | null; onSignOut?: () => void }) {
+export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   function openMenu() {
     setOpen(true);
@@ -25,6 +42,17 @@ export function MobileNav({ userEmail, onSignOut }: { userEmail?: string | null;
   function closeMenu() {
     setOpen(false);
     document.body.style.overflow = '';
+  }
+
+  async function handleSignOut() {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    await supabase.auth.signOut();
+    setUserEmail(null);
+    closeMenu();
+    router.push('/');
   }
 
   return (
@@ -75,7 +103,7 @@ export function MobileNav({ userEmail, onSignOut }: { userEmail?: string | null;
                     <div className="text-xs text-white/40">Signed in as</div>
                     <div className="text-xs text-white/70 truncate">{userEmail}</div>
                   </div>
-                  <button onClick={() => { onSignOut?.(); closeMenu(); }} className="w-full rounded-xl border border-rose-500/30 bg-rose-500/10 py-2 text-xs font-medium text-rose-300">
+                  <button onClick={handleSignOut} className="w-full rounded-xl border border-rose-500/30 bg-rose-500/10 py-2 text-xs font-medium text-rose-300">
                     Sign out
                   </button>
                 </div>
