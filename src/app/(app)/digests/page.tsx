@@ -11,6 +11,7 @@ type DigestEvent = {
   primary_tag: string;
   impact_score: number;
   published: string;
+  published_at: string;
   fetched_at: string;
   link: string;
   summary: string;
