@@ -121,6 +121,58 @@ const tiers = [
   },
 ];
 
+const reasons = [
+  {
+    icon: '⚡',
+    title: 'Speed over opinion',
+    copy: 'We push signals within minutes of a filing dropping. Trading mentors post hours later — after the move already happened.',
+  },
+  {
+    icon: '📡',
+    title: '28+ verified sources',
+    copy: 'Not one person\'s calls. SEC EDGAR, central banks, AI labs, fintech companies, crypto news, forex events — all automated.',
+  },
+  {
+    icon: '🤖',
+    title: 'AI analysis, not vibes',
+    copy: 'Every signal is analysed by Claude AI — market pair impact, trade direction, entry zone, target and stop loss. Data-driven, not gut feeling.',
+  },
+  {
+    icon: '🔔',
+    title: 'Delivered to you',
+    copy: 'Signals come to your Telegram automatically. You don\'t check a dashboard — we push the moment it matters.',
+  },
+  {
+    icon: '🔑',
+    title: 'API access included',
+    copy: 'Build your own tools on top of our data. Pull signals into Zapier, n8n, or your own trading stack.',
+  },
+  {
+    icon: '💷',
+    title: 'Fraction of the cost',
+    copy: 'Trading courses charge £1,000+. Private groups charge £3,000+. We charge £45/month for automated institutional-grade intel.',
+  },
+];
+
+const comparisonRows = [
+  { feature: 'SEC filing alerts', srh: true, tradingview: 'Stocks only', nolimit: false, courses: false },
+  { feature: 'Economic calendar', srh: true, tradingview: true, nolimit: false, courses: false },
+  { feature: 'AI trade predictions', srh: true, tradingview: false, nolimit: false, courses: false },
+  { feature: 'Forex signals', srh: true, tradingview: false, nolimit: false, courses: false },
+  { feature: 'Crypto signals', srh: true, tradingview: false, nolimit: 'Opinion only', courses: false },
+  { feature: 'Telegram push alerts', srh: true, tradingview: false, nolimit: 'Delayed', courses: false },
+  { feature: 'API access', srh: true, tradingview: false, nolimit: false, courses: false },
+  { feature: 'AI lab coverage', srh: true, tradingview: false, nolimit: false, courses: false },
+  { feature: 'No token required', srh: true, tradingview: true, nolimit: false, courses: true },
+  { feature: 'Price', srh: '£45/mo', tradingview: '£15-60/mo', nolimit: '£3,000+', courses: '£1,000+' },
+];
+
+function ComparisonCell({ value }: { value: boolean | string }) {
+  if (value === true) return <span className="text-emerald-400 font-bold">✓</span>;
+  if (value === false) return <span className="text-white/20">✗</span>;
+  return <span className="text-white/60 text-xs">{value}</span>;
+}
+
 function PricingSlider() {
   const [active, setActive] = useState(1);
 
@@ -300,6 +352,67 @@ export default function LandingPage() {
             ))}
           </section>
 
+          <section className="rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8">
+            <div className="text-xs uppercase tracking-[0.2em] text-white/50 mb-2">Why Signal Relay Hub</div>
+            <h2 className="text-2xl font-semibold mb-8">Stop paying for opinions. Start getting data.</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {reasons.map((reason) => (
+                <div key={reason.title} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                  <div className="text-2xl mb-3">{reason.icon}</div>
+                  <div className="text-sm font-semibold text-white mb-2">{reason.title}</div>
+                  <p className="text-sm text-white/60 leading-relaxed">{reason.copy}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8">
+            <div className="text-xs uppercase tracking-[0.2em] text-white/50 mb-2">How we compare</div>
+            <h2 className="text-2xl font-semibold mb-2">Signal Relay Hub vs the alternatives</h2>
+            <p className="text-sm text-white/50 mb-8">See why traders are switching from courses and influencers to automated data.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-3 pr-4 text-white/50 font-normal text-xs uppercase tracking-wide w-48">Feature</th>
+                    <th className="py-3 px-4 text-center">
+                      <div className="text-white font-semibold">Signal Relay Hub</div>
+                      <div className="text-xs text-sky-300">£45/month</div>
+                    </th>
+                    <th className="py-3 px-4 text-center">
+                      <div className="text-white/70 font-medium">TradingView</div>
+                      <div className="text-xs text-white/40">£15-60/month</div>
+                    </th>
+                    <th className="py-3 px-4 text-center">
+                      <div className="text-white/70 font-medium">Influencer Groups</div>
+                      <div className="text-xs text-white/40">£3,000+</div>
+                    </th>
+                    <th className="py-3 px-4 text-center">
+                      <div className="text-white/70 font-medium">Trading Courses</div>
+                      <div className="text-xs text-white/40">£1,000+</div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonRows.map((row, i) => (
+                    <tr key={row.feature} className={`border-b border-white/5 ${i % 2 === 0 ? 'bg-white/[0.02]' : ''}`}>
+                      <td className="py-3 pr-4 text-white/70 text-xs">{row.feature}</td>
+                      <td className="py-3 px-4 text-center font-medium">{<ComparisonCell value={row.srh} />}</td>
+                      <td className="py-3 px-4 text-center">{<ComparisonCell value={row.tradingview} />}</td>
+                      <td className="py-3 px-4 text-center">{<ComparisonCell value={row.nolimit} />}</td>
+                      <td className="py-3 px-4 text-center">{<ComparisonCell value={row.courses} />}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-6 flex justify-center">
+              <Link href="/pricing" className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
+                Get started free
+              </Link>
+            </div>
+          </section>
+
           <section className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6">
               <h2 className="text-xl font-semibold">Why teams use Signal Relay Hub</h2>
@@ -337,8 +450,10 @@ export default function LandingPage() {
 
         <footer className="mt-auto border-t border-white/5 pt-6 text-xs text-white/60">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <span>© {new Date().getFullYear()} Signal Relay Hub · Built for fintech operators & traders.</span>
-<p className="mt-2 text-white/30 text-xs max-w-2xl">Risk disclaimer: All signals and analysis provided by Signal Relay Hub are for informational purposes only and do not constitute financial advice. Trading involves significant risk and you may lose more than your initial investment. Always do your own research. Signal Relay Hub accepts no liability for any losses incurred.</p>
+            <div>
+              <span>© {new Date().getFullYear()} Signal Relay Hub · Built for fintech operators & traders.</span>
+              <p className="mt-2 text-white/30 text-xs max-w-2xl">Risk disclaimer: All signals and analysis provided by Signal Relay Hub are for informational purposes only and do not constitute financial advice. Trading involves significant risk and you may lose more than your initial investment. Always do your own research. Signal Relay Hub accepts no liability for any losses incurred.</p>
+            </div>
             <div className="flex gap-4">
               <Link href="/privacy" className="hover:text-white/80 transition-colors">Privacy Policy</Link>
               <a href="https://t.me/signalrelayhub" target="_blank" rel="noreferrer" className="hover:text-white/80 transition-colors">Telegram</a>
