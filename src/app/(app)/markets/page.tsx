@@ -100,6 +100,8 @@ export default function MarketsPage() {
   const [sentiment, setSentiment] = useState('all');
   const [loading, setLoading] = useState(false);
   const [activeChart, setActiveChart] = useState('XAUUSD');
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -119,7 +121,14 @@ export default function MarketsPage() {
     void loadEvents();
   }, [loadEvents]);
 
-  const filteredEvents = events.filter((e) => {
+  useEffect(() => {
+    fetch('/api/profile').then(r => r.json()).then(p => {
+      setIsSubscribed(p.is_subscribed ?? false);
+    }).catch(() => {});
+  }, []);
+
+  const FREE_SIGNAL_LIMIT = 5;
+  const allFilteredEvents = events.filter((e) => {
     const matchesSentiment = sentiment === 'all' || e.sentiment === sentiment;
     const matchesCategory = category === 'all' || (() => {
       const keywords = CATEGORY_KEYWORDS[category] ?? [];
@@ -130,9 +139,31 @@ export default function MarketsPage() {
     })();
     return matchesSentiment && matchesCategory;
   });
+  const filteredEvents = isSubscribed ? allFilteredEvents : allFilteredEvents.slice(0, FREE_SIGNAL_LIMIT);
+  const isGated = !isSubscribed && allFilteredEvents.length > FREE_SIGNAL_LIMIT;
 
   return (
     <div className="space-y-8">
+      {!isSubscribed && !bannerDismissed && (
+        <div className="rounded-2xl border border-sky-400/30 bg-sky-400/10 p-4 text-white flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sky-400 text-lg">📡</span>
+            <div>
+              <div className="text-sm font-semibold">You are on the free plan</div>
+              <div className="text-xs text-white/60">Upgrade to Pro to unlock Telegram alerts, Flash SEC filings, API access and full signal history.</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <a href="/pricing" className="rounded-full bg-sky-400 px-4 py-1.5 text-xs font-bold text-neutral-900 hover:bg-sky-300 transition-colors">
+              Upgrade to Pro
+            </a>
+            <button onClick={() => setBannerDismissed(true)} className="text-white/40 hover:text-white text-xs px-2">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       <section className="rounded-3xl bg-neutral-950 p-8 text-white shadow-xl">
         <p className="text-xs uppercase tracking-[0.3em] text-white/60">Markets</p>
         <h1 className="mt-3 text-3xl font-semibold leading-tight">Live prices + signal impact.</h1>
@@ -165,16 +196,16 @@ export default function MarketsPage() {
             <div className="flex flex-wrap gap-1">
               {['all', 'positive', 'neutral', 'negative'].map((s) => (
                 <button key={s} onClick={() => setSentiment(s)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${sentiment === s ? (s === 'positive' ? 'bg-emerald-500 text-white' : s === 'negative' ? 'bg-rose-500 text-white' : 'bg-white text-neutral-900') : 'bg-white/10 text-white hover:bg-white/20'}`}>
-                  {s === 'positive' ? '▲ Bullish' : s === 'negative' ? '▼ Bearish' : s === 'neutral' ? '— Neutral' : 'All'}
+                  {s === 'positive' ? 'Bullish' : s === 'negative' ? 'Bearish' : s === 'neutral' ? 'Neutral' : 'All'}
                 </button>
               ))}
             </div>
           </div>
         </div>
         {loading ? (
-          <div className="text-sm text-white/50 text-center py-8">Loading signals…</div>
+          <div className="text-sm text-white/50 text-center py-8">Loading signals...</div>
         ) : filteredEvents.length === 0 ? (
-          <div className="text-sm text-white/50 text-center py-8">No signals match this filter — try All to see everything, or wait for the next pipeline run to populate market pair analysis.</div>
+          <div className="text-sm text-white/50 text-center py-8">No signals match this filter.</div>
         ) : (
           <div className="space-y-3">
             {filteredEvents.map((event) => (
@@ -208,6 +239,16 @@ export default function MarketsPage() {
                 )}
               </div>
             ))}
+            {isGated && (
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                <div className="text-xs uppercase tracking-wide text-white/40 mb-2">Free plan limit reached</div>
+                <div className="text-base font-semibold text-white mb-1">{allFilteredEvents.length - FREE_SIGNAL_LIMIT} more market signals available</div>
+                <p className="text-sm text-white/50 mb-4">Pro members see full signal history with market pair analysis and Telegram alerts.</p>
+                <a href="/pricing" className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">
+                  Upgrade to Pro
+                </a>
+              </div>
+            )}
           </div>
         )}
       </section>
