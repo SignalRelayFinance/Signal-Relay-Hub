@@ -29,11 +29,16 @@ const SIGNAL_RESULTS = [
 
 function RotatingBanner() {
   const [current, setCurrent] = useState(0);
+  const [fade, setFade] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % SIGNAL_RESULTS.length);
-    }, 3000);
+      setFade(false);
+      setTimeout(() => {
+        setCurrent((prev) => (prev + 1) % SIGNAL_RESULTS.length);
+        setFade(true);
+      }, 300);
+    }, 3500);
     return () => clearInterval(timer);
   }, []);
 
@@ -41,24 +46,28 @@ function RotatingBanner() {
   if (!result) return null;
 
   return (
-    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex items-center gap-3">
-      <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-mono font-bold text-white">{result.pair}</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${result.direction === 'LONG' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-            {result.direction === 'LONG' ? 'LONG' : 'SHORT'}
+    <div className={`p-3 transition-opacity duration-300 ${fade ? 'opacity-100' : 'opacity-0'}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-mono text-sm font-bold text-white shrink-0">{result.pair}</span>
+          <span className={`rounded px-1.5 py-0.5 text-xs font-bold shrink-0 ${result.direction === 'LONG' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+            {result.direction === 'LONG' ? '▲' : '▼'} {result.direction}
           </span>
-          <span className="text-xs text-emerald-400 font-semibold">{result.result}</span>
-          <span className="text-xs text-white/40">{result.time}</span>
+          <span className="text-xs text-white/40 truncate">{result.signal}</span>
         </div>
-        <div className="text-xs text-white/50 truncate mt-0.5">{result.signal}</div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-sm font-bold text-emerald-400">{result.result}</span>
+          <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-bold text-emerald-300">{result.profit}</span>
+        </div>
       </div>
-      <div className="text-xs font-bold text-emerald-400 shrink-0">{result.profit}</div>
+      <div className="mt-2 flex gap-1">
+        {SIGNAL_RESULTS.map((_, i) => (
+          <span key={i} className={`h-0.5 flex-1 rounded-full transition-all ${i === current ? 'bg-emerald-400' : 'bg-white/10'}`} />
+        ))}
+      </div>
     </div>
   );
 }
-
 function CalendarCard({ event }: { event: SignalEvent }) {
   const impact = (event as any).impact as string | undefined;
   const currency = (event as any).currency as string | undefined;
@@ -376,8 +385,14 @@ export default function LiveFeedPage() {
                   </div>
                 </div>
                 <div className="w-full max-w-sm mb-4">
-                  <div className="text-xs uppercase tracking-wide text-white/40 mb-2">Recent signal results</div>
-                  <RotatingBanner />
+                  <div className="text-xs uppercase tracking-wide text-white/40 mb-2 text-left">Live signal results</div>
+                  <div className="rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs text-white/40 uppercase tracking-wide">Live results</span>
+                    </div>
+                    <RotatingBanner />
+                  </div>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2 mb-4">
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">Flash SEC alerts</div>
