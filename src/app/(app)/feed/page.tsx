@@ -19,6 +19,46 @@ const impactColors: Record<string, string> = {
   Low: 'bg-yellow-500',
 };
 
+const SIGNAL_RESULTS = [
+  { pair: 'XAUUSD', direction: 'LONG', result: '+180 pips', time: '4h ago', signal: 'Fed hawkish tone triggered gold rally', profit: '+£360 est.' },
+  { pair: 'EURUSD', direction: 'SHORT', result: '+95 pips', time: '6h ago', signal: 'ECB filing triggered EUR bearish setup', profit: '+£190 est.' },
+  { pair: 'BTCUSD', direction: 'LONG', result: '+2.4%', time: '8h ago', signal: 'Coinbase SEC 8-K filing — bullish catalyst', profit: '+£240 est.' },
+  { pair: 'GBPUSD', direction: 'SHORT', result: '+65 pips', time: '12h ago', signal: 'BOE Governor speech triggered GBP weakness', profit: '+£130 est.' },
+  { pair: 'USOIL', direction: 'LONG', result: '+1.8%', time: '1d ago', signal: 'Hormuz constraints — oil supply shock signal', profit: '+£180 est.' },
+];
+
+function RotatingBanner() {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % SIGNAL_RESULTS.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const result = SIGNAL_RESULTS[current];
+  if (!result) return null;
+
+  return (
+    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex items-center gap-3">
+      <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-mono font-bold text-white">{result.pair}</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${result.direction === 'LONG' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+            {result.direction === 'LONG' ? 'LONG' : 'SHORT'}
+          </span>
+          <span className="text-xs text-emerald-400 font-semibold">{result.result}</span>
+          <span className="text-xs text-white/40">{result.time}</span>
+        </div>
+        <div className="text-xs text-white/50 truncate mt-0.5">{result.signal}</div>
+      </div>
+      <div className="text-xs font-bold text-emerald-400 shrink-0">{result.profit}</div>
+    </div>
+  );
+}
+
 function CalendarCard({ event }: { event: SignalEvent }) {
   const impact = (event as any).impact as string | undefined;
   const currency = (event as any).currency as string | undefined;
@@ -90,7 +130,7 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
         </a>
         {event.summary && <p className="mt-1.5 text-sm text-white/60 line-clamp-2">{event.summary}</p>}
       </div>
-     {event.pairs_analysis && (
+      {event.pairs_analysis && (
         <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-2.5">
           <div className="text-xs uppercase tracking-wide text-white/40 mb-1.5">Market impact</div>
           <div className="flex flex-wrap gap-1.5">
@@ -115,7 +155,7 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="font-mono text-xs font-bold text-white">{t.pair}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.direction === 'long' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                    {t.direction === 'long' ? '▲ LONG' : '▼ SHORT'}
+                    {t.direction === 'long' ? 'LONG' : 'SHORT'}
                   </span>
                   <span className="rounded-full px-2 py-0.5 text-xs bg-amber-500/20 text-amber-400">{t.conviction} conviction</span>
                   <span className="text-xs text-white/40">{t.timeframe}</span>
@@ -132,13 +172,15 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
               <p className="text-xs text-white/50 border-t border-white/10 pt-2 mt-1">{event.trade_prediction.market_summary}</p>
             )}
           </div>
-         {!isElite && <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 backdrop-blur-sm rounded-xl">
-            <div className="text-xs uppercase tracking-wide text-amber-400 mb-1">Elite feature</div>
-            <div className="text-sm font-semibold text-white mb-3">AI trade predictions are Elite only</div>
-            <a href="/pricing" className="rounded-full bg-amber-400 px-4 py-1.5 text-xs font-bold text-neutral-900 hover:bg-amber-300 transition-colors">
-              Upgrade to Elite — £150/mo
-            </a>
-          </div>}
+          {!isElite && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 backdrop-blur-sm rounded-xl">
+              <div className="text-xs uppercase tracking-wide text-amber-400 mb-1">Elite feature</div>
+              <div className="text-sm font-semibold text-white mb-3">AI trade predictions are Elite only</div>
+              <a href="/pricing" className="rounded-full bg-amber-400 px-4 py-1.5 text-xs font-bold text-neutral-900 hover:bg-amber-300 transition-colors">
+                Upgrade to Elite
+              </a>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -151,10 +193,11 @@ export default function LiveFeedPage() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
- const [status, setStatus] = useState<StatusPayload | null>(null);
+  const [status, setStatus] = useState<StatusPayload | null>(null);
   const [isElite, setIsElite] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
+
   const loadEvents = useCallback(async (tag: string, pageNum: number, replace: boolean) => {
     setLoading(true);
     try {
@@ -190,7 +233,7 @@ export default function LiveFeedPage() {
           const data = await statusRes.json();
           setStatus(data as StatusPayload);
         }
-       if (profileRes.ok && mounted) {
+        if (profileRes.ok && mounted) {
           const profile = await profileRes.json();
           setIsElite(profile.is_elite ?? false);
           setIsSubscribed(profile.is_subscribed ?? false);
@@ -290,7 +333,7 @@ export default function LiveFeedPage() {
           ) : (
             signalEvents.map((event) => <EventCard key={event.id} event={event} isElite={isElite} />)
           )}
-          {loading && <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center text-sm text-white/50">Loading…</div>}
+          {loading && <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center text-sm text-white/50">Loading...</div>}
           {isGated && profileLoaded && (
             <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
               <div className="blur-sm pointer-events-none select-none p-4 space-y-3">
@@ -306,7 +349,7 @@ export default function LiveFeedPage() {
                       <div className="mt-2 flex flex-wrap gap-1">
                         {event.pairs_analysis.pairs?.slice(0, 3).map((p) => (
                           <span key={p.pair} className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-white/60">
-                            {p.pair} {p.direction === 'bullish' ? '▲' : '▼'}
+                            {p.pair} {p.direction === 'bullish' ? 'up' : 'down'}
                           </span>
                         ))}
                       </div>
@@ -317,7 +360,7 @@ export default function LiveFeedPage() {
               <div className="relative -mt-32 pb-6 px-6 flex flex-col items-center text-center bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent pt-20">
                 <div className="text-xs uppercase tracking-wide text-white/50 mb-2">Free plan limit reached</div>
                 <h3 className="text-lg font-semibold text-white mb-1">{allSignalEvents.length - FREE_LIMIT} more signals available today</h3>
-               <p className="text-sm text-white/60 mb-4 max-w-sm">Pro members are seeing live SEC alerts, AI market analysis and trade setups for these signals right now.</p>
+                <p className="text-sm text-white/60 mb-3 max-w-sm">Pro members are seeing live SEC alerts, AI market analysis and trade setups for these signals right now.</p>
                 <div className="grid grid-cols-3 gap-3 mb-4 w-full max-w-sm">
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-center">
                     <div className="text-lg font-bold text-emerald-400">73%</div>
@@ -332,48 +375,27 @@ export default function LiveFeedPage() {
                     <div className="text-xs text-white/50 mt-0.5">Live sources</div>
                   </div>
                 </div>
-                <div className="w-full max-w-sm space-y-2 mb-4">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-left">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-emerald-400 text-xs font-bold">XAUUSD ▲ LONG</span>
-                      <span className="text-xs text-white/40">Elite signal · 2h ago</span>
-                    </div>
-                    <div className="text-xs text-white/60">Fed hawkishness signal triggered gold long — members alerted before the 1.2% move.</div>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-left">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-rose-400 text-xs font-bold">EURUSD ▼ SHORT</span>
-                      <span className="text-xs text-white/40">Pro signal · 4h ago</span>
-                    </div>
-                    <div className="text-xs text-white/60">ECB filing triggered EUR bearish setup — Telegram alert sent within 3 minutes of filing.</div>
-                  </div>
+                <div className="w-full max-w-sm mb-4">
+                  <div className="text-xs uppercase tracking-wide text-white/40 mb-2">Recent signal results</div>
+                  <RotatingBanner />
                 </div>
-                <div className="flex flex-wrap justify-center gap-3 mb-4">
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
-                    ✓ Flash SEC alerts
-                  </div>
-                  <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-xs text-sky-300">
-                    ✓ Telegram push alerts
-                  </div>
-                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-                    ✓ AI trade predictions
-                  </div>
-                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-300">
-                    ✓ Market pair analysis
-                  </div>
+                <div className="flex flex-wrap justify-center gap-2 mb-4">
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">Flash SEC alerts</div>
+                  <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-300">Telegram push alerts</div>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300">AI trade predictions</div>
+                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-1.5 text-xs text-purple-300">Market pair analysis</div>
                 </div>
                 <div className="flex gap-3">
                   <a href="/pricing" className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">
-                    Upgrade to Pro — £45/mo
+                    Upgrade to Pro
                   </a>
                   <a href="/pricing" className="rounded-full border border-amber-400/40 bg-amber-400/10 px-5 py-2 text-sm font-medium text-amber-300 hover:bg-amber-400/20 transition-colors">
-                    Get Elite — £150/mo
+                    Get Elite
                   </a>
                 </div>
               </div>
             </div>
           )}
-
           {!isGated && hasMore && !loading && signalEvents.length > 0 && (
             <div className="flex justify-center pt-2">
               <button onClick={loadMore} className="rounded-full border border-white/20 px-6 py-2 text-sm font-medium text-white/70 hover:bg-white/10">
