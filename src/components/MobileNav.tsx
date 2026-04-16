@@ -33,9 +33,9 @@ export function MobileNav({ userEmail, onSignOut }: { userEmail?: string | null;
         className="flex flex-col gap-1.5 p-2 md:hidden relative z-50"
         aria-label="Toggle menu"
       >
-        <span className={`block h-0.5 w-6 bg-white transition-all duration-300 ${open ? 'rotate-45 translate-y-2' : ''}`} />
-        <span className={`block h-0.5 w-6 bg-white transition-all duration-300 ${open ? 'opacity-0 w-0' : ''}`} />
-        <span className={`block h-0.5 w-6 bg-white transition-all duration-300 ${open ? '-rotate-45 -translate-y-2' : ''}`} />
+        <span className={['block h-0.5 w-6 bg-white transition-all duration-300', open ? 'rotate-45 translate-y-2' : ''].join(' ')} />
+        <span className={['block h-0.5 w-6 bg-white transition-all duration-300', open ? 'opacity-0 w-0' : ''].join(' ')} />
+        <span className={['block h-0.5 w-6 bg-white transition-all duration-300', open ? '-rotate-45 -translate-y-2' : ''].join(' ')} />
       </button>
 
       {open && (
