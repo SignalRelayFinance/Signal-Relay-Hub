@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -17,43 +17,51 @@ export function MobileNav({ userEmail, onSignOut }: { userEmail?: string | null;
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
   return (
     <>
       <button
         onClick={() => setOpen(!open)}
         className="flex flex-col gap-1.5 p-2 md:hidden relative z-50"
-        aria-label="Open menu"
+        aria-label="Toggle menu"
       >
         <span className={`block h-0.5 w-6 bg-white transition-all duration-300 ${open ? 'rotate-45 translate-y-2' : ''}`} />
-        <span className={`block h-0.5 w-6 bg-white transition-all duration-300 ${open ? 'opacity-0' : ''}`} />
+        <span className={`block h-0.5 w-6 bg-white transition-all duration-300 ${open ? 'opacity-0 w-0' : ''}`} />
         <span className={`block h-0.5 w-6 bg-white transition-all duration-300 ${open ? '-rotate-45 -translate-y-2' : ''}`} />
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-40 md:hidden">
+        <div className="fixed inset-0 z-40 md:hidden" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
           <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-0 bottom-0 w-80 bg-neutral-950 border-l border-white/10 flex flex-col shadow-2xl">
-            
-            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
-              <span className="text-sm font-semibold uppercase tracking-[0.3em] text-white">Menu</span>
-              <button 
-                onClick={() => setOpen(false)} 
-                className="h-8 w-8 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+          <div className="absolute right-3 top-16 w-72 rounded-2xl border border-white/20 bg-neutral-950 shadow-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+              <span className="text-xs uppercase tracking-[0.2em] text-white/50">Navigation</span>
+              <button
+                onClick={() => setOpen(false)}
+                className="h-6 w-6 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:text-white text-xs"
               >
                 ✕
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto py-3 px-3">
+            <nav className="p-3 space-y-1">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className={`flex items-center px-4 py-3.5 rounded-xl mb-1 text-sm font-medium transition-all ${
+                  className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                     pathname === link.href
                       ? 'text-white bg-white/15 border border-white/20'
                       : 'text-white/70 hover:text-white hover:bg-white/10 border border-transparent'
@@ -64,21 +72,21 @@ export function MobileNav({ userEmail, onSignOut }: { userEmail?: string | null;
               ))}
             </nav>
 
-            <div className="border-t border-white/10 p-4 space-y-3">
+            <div className="border-t border-white/10 p-3 space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <a 
-                  href="https://t.me/signalrelayhub" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="flex items-center justify-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/10 py-2.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors"
+                
+                  href="https://t.me/signalrelayhub"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 py-2 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors"
                 >
                   📲 Telegram
                 </a>
-                <a 
-                  href="https://discord.gg/4X9NGZuK" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="flex items-center justify-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 py-2.5 text-xs font-medium text-indigo-300 hover:bg-indigo-500/20 transition-colors"
+                
+                  href="https://discord.gg/4X9NGZuK"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 py-2 text-xs font-medium text-indigo-300 hover:bg-indigo-500/20 transition-colors"
                 >
                   💬 Discord
                 </a>
@@ -92,7 +100,7 @@ export function MobileNav({ userEmail, onSignOut }: { userEmail?: string | null;
                   </div>
                   <button
                     onClick={() => { onSignOut?.(); setOpen(false); }}
-                    className="w-full rounded-xl border border-rose-500/30 bg-rose-500/10 py-2.5 text-xs font-medium text-rose-300 hover:bg-rose-500/20 transition-colors"
+                    className="w-full rounded-xl border border-rose-500/30 bg-rose-500/10 py-2 text-xs font-medium text-rose-300 hover:bg-rose-500/20 transition-colors"
                   >
                     Sign out
                   </button>
