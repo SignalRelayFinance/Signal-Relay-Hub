@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { SignalEvent, StatusPayload } from '@/lib/types';
 
-const TAGS = ['all', 'product', 'regulatory', 'funding', 'pricing', 'security', 'partnership', 'talent', 'general'];
+const TAGS = ['all', 'product', 'regulatory', 'funding', 'pricing', 'security', 'partnership', 'talent', 'insider_trading', 'ownership_change', 'merger_acquisition', 'management', 'earnings', 'general'];
 const PAGE_SIZE = 25;
 
 const sentimentColors: Record<string, string> = {
