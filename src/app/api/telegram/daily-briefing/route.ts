@@ -122,6 +122,15 @@ Keep it factual, grounded in the actual signals provided. Professional tone. Max
   return data.content?.[0]?.text ?? 'Briefing unavailable';
 }
 
+function markdownToTelegram(text: string): string {
+  return text
+    .replace(/^## (.+)$/gm, '<b>$1</b>')
+    .replace(/^# (.+)$/gm, '<b>$1</b>')
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/\*(.+?)\*/g, '<i>$1</i>')
+    .replace(/^---+$/gm, '─────────────');
+}
+
 function formatBriefingMessage(briefing: string, prices: Record<string, number>, isElite: boolean): string {
   const date = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -131,7 +140,7 @@ function formatBriefingMessage(briefing: string, prices: Record<string, number>,
   });
 
   const priceLines = Object.entries(prices)
-    .map(([k, v]) => `${k}: <b>${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</b>`)
+    .map(([k, v]) => `${k}: <b>${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>`)
     .join(' · ');
 
   const eliteBadge = isElite ? '⭐ <b>ELITE DAILY BRIEFING</b>' : '📡 <b>SIGNAL RELAY HUB — DAILY BRIEFING</b>';
@@ -144,7 +153,7 @@ ${priceLines}
 
 ─────────────
 
-${briefing}
+${markdownToTelegram(briefing)}
 
 ─────────────
 ${isElite ? '🤖 AI analysis · Elite subscribers only\n🔗 https://www.signalrelayhub.io/ai-assistant' : '🔗 https://www.signalrelayhub.io\n🎯 Upgrade for full analysis → https://www.signalrelayhub.io/pricing'}`;
