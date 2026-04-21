@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/telegram/pre-event-alert",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
