@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: '/pricing', label: 'Pricing' },
   { href: '/settings', label: 'Account' },
   { href: '/privacy', label: 'Privacy Policy' },
+  { href: '/ai-assistant', label: 'AI Assistant' },
 ];
 
 export function MobileNav() {
