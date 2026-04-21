@@ -2,13 +2,48 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const PAIRS = ['EURUSD', 'XAUUSD', 'BTCUSD', 'US30', 'GBPUSD', 'USOIL'];
-
 function getServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+async function fetchLivePrices(): Promise<Record<string, number>> {
+  const prices: Record<string, number> = {};
+  try {
+    const symbols = [
+      { key: 'XAUUSD', url: 'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=1d' },
+      { key: 'BTCUSD', url: 'https://query1.finance.yahoo.com/v8/finance/chart/BTC-USD?interval=1d&range=1d' },
+      { key: 'EURUSD', url: 'https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X?interval=1d&range=1d' },
+      { key: 'GBPUSD', url: 'https://query1.finance.yahoo.com/v8/finance/chart/GBPUSD=X?interval=1d&range=1d' },
+      { key: 'USOIL', url: 'https://query1.finance.yahoo.com/v8/finance/chart/CL=F?interval=1d&range=1d' },
+      { key: 'US30', url: 'https://query1.finance.yahoo.com/v8/finance/chart/%5EDJI?interval=1d&range=1d' },
+    ];
+
+    await Promise.all(symbols.map(async ({ key, url }) => {
+      try {
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+        });
+        const data = await res.json();
+        const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+        if (price) prices[key] = price;
+      } catch {
+        // ignore individual failures
+      }
+    }));
+  } catch {
+    // ignore
+  }
+  return prices;
+}
+
+function formatPrices(prices: Record<string, number>): string {
+  if (Object.keys(prices).length === 0) return 'Live prices unavailable — use current market prices';
+  return Object.entries(prices)
+    .map(([pair, price]) => `${pair}: ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 5 })}`)
+    .join('\n');
 }
 
 export async function POST(req: Request) {
@@ -19,7 +54,6 @@ export async function POST(req: Request) {
 
   const supabase = getServiceClient();
 
-  // Only analyse high impact events without predictions yet
   const { data: events } = await supabase
     .from('sf_events')
     .select('id, title, summary, company, primary_tag, impact_score, pairs_analysis')
@@ -33,6 +67,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, predicted: 0 });
   }
 
+  // Fetch live prices once for all predictions
+  const livePrices = await fetchLivePrices();
+  const pricesContext = formatPrices(livePrices);
+
   let predicted = 0;
 
   for (const event of events) {
@@ -41,7 +79,10 @@ export async function POST(req: Request) {
         ?.map((p: any) => `${p.pair}: ${p.direction} (strength ${p.strength}) — ${p.reason}`)
         .join('\n') ?? 'No pairs analysis available';
 
-      const prompt = `You are a senior forex and crypto trading analyst with 15 years of experience. A high-impact market signal has just dropped. Generate a professional trade prediction.
+      const prompt = `You are a senior forex and crypto trading analyst with 15 years of experience. A high-impact market signal has just dropped. Generate a professional trade prediction using CURRENT live market prices.
+
+CURRENT LIVE PRICES (use these exactly for entry zones, targets and stop losses):
+${pricesContext}
 
 SIGNAL:
 Company: ${event.company}
@@ -51,6 +92,8 @@ Summary: ${event.summary ?? 'N/A'}
 
 MARKET IMPACT ANALYSIS:
 ${pairsContext}
+
+IMPORTANT: Entry zones, targets and stop losses MUST be based on the current live prices above. Do not use historical or estimated prices. For example if XAUUSD is at ${livePrices['XAUUSD'] ?? '3300'}, entry zones should be near that price level.
 
 Generate trade predictions for the most affected pairs. Be specific and actionable.
 
@@ -110,5 +153,5 @@ Only include pairs where there is a clear directional bias. Maximum 3 trades. Be
     }
   }
 
-  return NextResponse.json({ ok: true, predicted });
+  return NextResponse.json({ ok: true, predicted, prices_used: livePrices });
 }
