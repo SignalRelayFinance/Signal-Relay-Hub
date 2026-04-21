@@ -6,21 +6,29 @@ import { cookies } from 'next/headers';
 export const dynamic = 'force-dynamic';
 
 async function fetchCurrentPrice(pair: string): Promise<number | null> {
-  const urlMap: Record<string, string> = {
-    XAUUSD: 'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=1d',
-    BTCUSD: 'https://query1.finance.yahoo.com/v8/finance/chart/BTC-USD?interval=1d&range=1d',
-    EURUSD: 'https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X?interval=1d&range=1d',
-    GBPUSD: 'https://query1.finance.yahoo.com/v8/finance/chart/GBPUSD=X?interval=1d&range=1d',
-    USOIL: 'https://query1.finance.yahoo.com/v8/finance/chart/CL=F?interval=1d&range=1d',
-    US30: 'https://query1.finance.yahoo.com/v8/finance/chart/%5EDJI?interval=1d&range=1d',
-    ETHUSD: 'https://query1.finance.yahoo.com/v8/finance/chart/ETH-USD?interval=1d&range=1d',
-  };
   try {
-    const url = urlMap[pair];
-    if (!url) return null;
-    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const apiKey = process.env.TWELVE_DATA_API_KEY;
+    if (!apiKey) return null;
+
+    const symbolMap: Record<string, string> = {
+      XAUUSD: 'XAU/USD',
+      BTCUSD: 'BTC/USD',
+      EURUSD: 'EUR/USD',
+      GBPUSD: 'GBP/USD',
+      USOIL: 'WTI/USD',
+      US30: 'US30/USD',
+      ETHUSD: 'ETH/USD',
+    };
+
+    const symbol = symbolMap[pair];
+    if (!symbol) return null;
+
+    const res = await fetch(
+      `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`
+    );
     const data = await res.json();
-    return data?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
+    const price = data?.price;
+    return price ? parseFloat(price) : null;
   } catch {
     return null;
   }
