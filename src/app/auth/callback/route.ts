@@ -7,8 +7,14 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const token_hash = searchParams.get('token_hash');
-  const type = searchParams.get('type');
+  const type = searchParams.get('type') ?? 'magiclink';
   const next = searchParams.get('next') ?? '/feed';
+  const error = searchParams.get('error');
+
+  if (error) {
+    console.error('Auth error:', error, searchParams.get('error_description'));
+    return NextResponse.redirect(`${origin}/login?error=auth`);
+  }
 
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -26,18 +32,23 @@ export async function GET(request: Request) {
     }
   );
 
-  if (token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash, type: type as any });
-    if (!error) {
+  if (token_hash) {
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash,
+      type: type as any,
+    });
+    if (!verifyError) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+    console.error('OTP verify error:', verifyError);
   }
 
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    if (!exchangeError) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+    console.error('Code exchange error:', exchangeError);
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth`);
