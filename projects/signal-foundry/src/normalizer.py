@@ -23,17 +23,91 @@ CATEGORY_RULES: Dict[str, Sequence[str]] = {
     "security": ["breach", "vulnerability", "incident", "outage", "downtime"],
     "partnership": ["partner", "partnership", "collaborat", "alliance"],
     "marketing": ["campaign", "promo", "webinar", "event", "conference"],
+    "insider_trading": ["form 4", "insider", "beneficial owner", "stock purchase", "stock sale", "equity award"],
+    "ownership_change": ["sc 13d", "sc 13g", "schedule 13", "activist", "stake", "ownership"],
+    "merger_acquisition": ["merger", "acquisition", "acqui", "takeover", "buyout", "deal close", "transaction complete"],
+    "management": ["officer", "director", "ceo", "cfo", "coo", "president", "appointed", "resigned", "departure", "succession"],
+    "earnings": ["earnings", "revenue", "quarterly", "annual report", "10-k", "10-q", "eps", "profit", "loss"],
 }
 
+SEC_FORM_RULES = [
+    {
+        "forms": ["form 4", "form4"],
+        "tag": "insider_trading",
+        "impact": 4,
+        "label": "Insider Trading",
+    },
+    {
+        "forms": ["sc 13d", "sc 13g", "schedule 13d", "schedule 13g"],
+        "tag": "ownership_change",
+        "impact": 4,
+        "label": "Ownership Change",
+    },
+    {
+        "forms": ["s-1", "s1", "ipo", "initial public offering"],
+        "tag": "funding",
+        "impact": 5,
+        "label": "IPO Filing",
+    },
+    {
+        "forms": ["10-k", "10k", "annual report"],
+        "tag": "earnings",
+        "impact": 4,
+        "label": "Annual Report",
+    },
+    {
+        "forms": ["10-q", "10q", "quarterly report"],
+        "tag": "earnings",
+        "impact": 3,
+        "label": "Quarterly Report",
+    },
+]
+
+SEC_8K_KEYWORDS = [
+    (["merger", "acquisition", "acqui", "takeover", "buyout", "business combination"], "merger_acquisition", 5),
+    (["officer", "director", "ceo", "cfo", "coo", "appointed", "resigned", "departure", "succession", "president"], "management", 4),
+    (["bankruptcy", "chapter 11", "insolvency", "liquidat"], "regulatory", 5),
+    (["breach", "vulnerability", "cybersecurity", "hack", "incident", "outage"], "security", 5),
+    (["dividend", "buyback", "repurchase", "special distribution"], "funding", 3),
+    (["partnership", "joint venture", "alliance", "collaborat"], "partnership", 3),
+]
+
 SENTIMENT_RULES = {
-    "positive": ["record", "growth", "milestone", "best", "win", "improved", "expanding"],
-    "negative": ["decline", "loss", "issue", "problem", "delay", "drop", "lawsuit"],
+    "positive": ["record", "growth", "milestone", "best", "win", "improved", "expanding", "appointed", "launched", "agreement"],
+    "negative": ["decline", "loss", "issue", "problem", "delay", "drop", "lawsuit", "resigned", "breach", "bankruptcy", "investigation"],
 }
 
 IMPACT_BASE = {
     "pricing": 4, "product": 3, "funding": 5, "regulatory": 5,
-    "talent": 2, "security": 4, "partnership": 3, "marketing": 2, "general": 1,
+    "talent": 2, "security": 4, "partnership": 3, "marketing": 2,
+    "insider_trading": 4, "ownership_change": 4, "merger_acquisition": 5,
+    "management": 4, "earnings": 4, "general": 1,
 }
+
+
+def classify_sec_event(title: str, summary: str, source: str) -> tuple[str, int] | None:
+    """Classify SEC filings by form type and content. Returns (tag, impact) or None."""
+    text = f"{title} {summary}".lower()
+    source_lower = (source or "").lower()
+
+    # Only apply to SEC sources
+    if "sec" not in source_lower and "edgar" not in source_lower and "sec.gov" not in source_lower:
+        return None
+
+    # Check form type rules first
+    for rule in SEC_FORM_RULES:
+        if any(form in text for form in rule["forms"]):
+            return rule["tag"], rule["impact"]
+
+    # 8-K specific classification
+    if "8-k" in text or "8k" in text:
+        for keywords, tag, impact in SEC_8K_KEYWORDS:
+            if any(kw in text for kw in keywords):
+                return tag, impact
+        # Generic 8-K
+        return "regulatory", 3
+
+    return None
 
 
 @dataclass
@@ -53,21 +127,21 @@ class NormalizedEvent:
             "primary_tag": self.tags[0] if self.tags else "general",
             "normalized_at": datetime.utcnow().isoformat(),
         })
-        # Only override sentiment/impact if not already set by collector
         if not enriched.get("sentiment"):
             enriched["sentiment"] = self.sentiment
         if not enriched.get("impact_score"):
             enriched["impact_score"] = self.impact_score
         if not enriched.get("confidence"):
             enriched["confidence"] = self.confidence
-        # Preserve Forex Factory fields
         for field in ["event_type", "currency", "impact", "impact_color", "forecast", "previous", "actual"]:
             if field in self.record:
                 enriched[field] = self.record[field]
         return enriched
-        
+
+
 def strip_html(text: str) -> str:
     return re.sub(r'<[^>]+>', '', text).strip()
+
 
 def event_id(record: Dict) -> str:
     basis = record.get("link") or record.get("title") or ""
@@ -76,7 +150,13 @@ def event_id(record: Dict) -> str:
     return hashlib.sha1(payload).hexdigest()
 
 
-def detect_tags(text: str) -> List[str]:
+def detect_tags(text: str, source: str = "", title: str = "", summary: str = "") -> List[str]:
+    # Try SEC classification first
+    sec_result = classify_sec_event(title, summary, source)
+    if sec_result:
+        tag, _ = sec_result
+        return [tag]
+
     tags = []
     for tag, needles in CATEGORY_RULES.items():
         if any(re.search(rf"\b{re.escape(word)}", text) for word in needles):
@@ -92,7 +172,13 @@ def detect_sentiment(text: str) -> str:
     return "neutral"
 
 
-def score_impact(tags: Sequence[str], text: str) -> int:
+def score_impact(tags: Sequence[str], text: str, source: str = "", title: str = "", summary: str = "") -> int:
+    # Use SEC-specific impact if applicable
+    sec_result = classify_sec_event(title, summary, source)
+    if sec_result:
+        _, impact = sec_result
+        return impact
+
     base = max(IMPACT_BASE.get(tag, 1) for tag in tags) if tags else 1
     modifiers = sum([
         any(w in text for w in ("record", "historic", "first")),
@@ -117,10 +203,18 @@ def normalize_records(records: List[Dict]) -> List[Dict]:
         if rid in seen:
             continue
         seen.add(rid)
-        blob = " ".join(filter(None, [strip_html(record.get("title") or ""), strip_html(record.get("summary") or "")])).lower()
-        tags = detect_tags(blob)
+
+        title = strip_html(record.get("title") or "")
+        summary = strip_html(record.get("summary") or "")
+        source = record.get("source") or record.get("company") or ""
+        blob = f"{title} {summary}".lower()
+
+        tags = detect_tags(blob, source=source, title=title, summary=summary)
+        impact = score_impact(tags, blob, source=source, title=title, summary=summary)
+        sentiment = detect_sentiment(blob)
+
         normalized.append(NormalizedEvent(
-            record, tags, detect_sentiment(blob), score_impact(tags, blob), confidence_from_record(record)
+            record, tags, sentiment, impact, confidence_from_record(record)
         ).as_dict())
     return normalized
 
