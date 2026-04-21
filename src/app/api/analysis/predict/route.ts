@@ -12,27 +12,28 @@ function getServiceClient() {
 async function fetchLivePrices(): Promise<Record<string, number>> {
   const prices: Record<string, number> = {};
   try {
-    const symbols = [
-      { key: 'XAUUSD', url: 'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=1d' },
-      { key: 'BTCUSD', url: 'https://query1.finance.yahoo.com/v8/finance/chart/BTC-USD?interval=1d&range=1d' },
-      { key: 'EURUSD', url: 'https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X?interval=1d&range=1d' },
-      { key: 'GBPUSD', url: 'https://query1.finance.yahoo.com/v8/finance/chart/GBPUSD=X?interval=1d&range=1d' },
-      { key: 'USOIL', url: 'https://query1.finance.yahoo.com/v8/finance/chart/CL=F?interval=1d&range=1d' },
-      { key: 'US30', url: 'https://query1.finance.yahoo.com/v8/finance/chart/%5EDJI?interval=1d&range=1d' },
-    ];
+    const apiKey = process.env.TWELVE_DATA_API_KEY;
+    if (!apiKey) return prices;
 
-    await Promise.all(symbols.map(async ({ key, url }) => {
-      try {
-        const res = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-        });
-        const data = await res.json();
-        const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (price) prices[key] = price;
-      } catch {
-        // ignore individual failures
-      }
-    }));
+    const symbols: Record<string, string> = {
+      XAUUSD: 'XAU/USD',
+      BTCUSD: 'BTC/USD',
+      EURUSD: 'EUR/USD',
+      GBPUSD: 'GBP/USD',
+      USOIL: 'WTI/USD',
+      US30: 'US30/USD',
+    };
+
+    const symbolList = Object.values(symbols).join(',');
+    const res = await fetch(
+      `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbolList)}&apikey=${apiKey}`
+    );
+    const data = await res.json();
+
+    for (const [key, symbol] of Object.entries(symbols)) {
+      const price = data[symbol]?.price;
+      if (price) prices[key] = parseFloat(price);
+    }
   } catch {
     // ignore
   }
