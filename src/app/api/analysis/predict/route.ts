@@ -80,10 +80,13 @@ export async function POST(req: Request) {
         ?.map((p: any) => `${p.pair}: ${p.direction} (strength ${p.strength}) — ${p.reason}`)
         .join('\n') ?? 'No pairs analysis available';
 
-      const prompt = `You are a senior forex and crypto trading analyst with 15 years of experience. A high-impact market signal has just dropped. Generate a professional trade prediction using CURRENT live market prices.
+      const prompt = `You are a senior forex and crypto trading analyst with 15 years of experience. A high-impact market signal has just dropped. 
 
-CURRENT LIVE PRICES (use these exactly for entry zones, targets and stop losses):
+CRITICAL GUARDRAIL: You MUST base your entry_zone, target, and stop_loss EXACTLY around the current live market prices provided below. If you suggest a trade for a pair, the prices MUST reflect this live data. Do NOT use historical data.
+
+--- CURRENT LIVE PRICES ---
 ${pricesContext}
+---------------------------
 
 SIGNAL:
 Company: ${event.company}
@@ -94,30 +97,26 @@ Summary: ${event.summary ?? 'N/A'}
 MARKET IMPACT ANALYSIS:
 ${pairsContext}
 
-IMPORTANT: Entry zones, targets and stop losses MUST be based on the current live prices above. Do not use historical or estimated prices. For example if XAUUSD is at ${livePrices['XAUUSD'] ?? '3300'}, entry zones should be near that price level.
-
-Generate trade predictions for the most affected pairs. Be specific and actionable.
-
-Respond ONLY with valid JSON, no markdown, exactly this structure:
+Respond ONLY with valid JSON, no markdown, exactly in this structure:
 {
   "trades": [
     {
-      "pair": "EURUSD",
+      "pair": "XAUUSD",
       "direction": "long" | "short",
       "conviction": "high" | "medium" | "low",
-      "entry_zone": "1.0820 - 1.0840",
-      "target": "1.0920",
-      "stop_loss": "1.0780",
+      "entry_zone": "MUST ALIGN WITH LIVE PRICE",
+      "target": "CALCULATED FROM LIVE PRICE",
+      "stop_loss": "CALCULATED FROM LIVE PRICE",
       "timeframe": "4-12 hours",
-      "thesis": "Two to three sentence explanation of why this trade makes sense given the signal",
-      "key_risks": "One sentence describing the main risk to this trade"
+      "thesis": "Two to three sentence explanation.",
+      "key_risks": "One sentence describing the main risk."
     }
   ],
-  "market_summary": "Two to three sentence overall market context and what traders should watch",
-  "do_not_trade": "Any pairs to avoid trading right now and why — one sentence"
+  "market_summary": "Two to three sentence overall market context.",
+  "do_not_trade": "Any pairs to avoid trading right now and why."
 }
 
-Only include pairs where there is a clear directional bias. Maximum 3 trades. Be conservative — only high conviction setups.`;
+Maximum 3 trades. Only include high conviction setups.`;
 
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
