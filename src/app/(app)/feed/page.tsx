@@ -68,6 +68,7 @@ function RotatingBanner() {
     </div>
   );
 }
+
 function CalendarCard({ event }: { event: SignalEvent }) {
   const impact = (event as any).impact as string | undefined;
   const currency = (event as any).currency as string | undefined;
@@ -192,6 +193,25 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function EventSkeleton() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse">
+      <div className="flex justify-between gap-2 mb-3">
+        <div className="h-3 w-24 bg-white/10 rounded"></div>
+        <div className="flex gap-2">
+          <div className="h-4 w-16 bg-white/10 rounded-full"></div>
+          <div className="h-4 w-20 bg-white/10 rounded-full"></div>
+        </div>
+      </div>
+      <div className="space-y-2 mt-4">
+        <div className="h-5 w-3/4 bg-white/10 rounded"></div>
+        <div className="h-4 w-full bg-white/10 rounded mt-2"></div>
+        <div className="h-4 w-5/6 bg-white/10 rounded"></div>
+      </div>
     </div>
   );
 }
@@ -342,7 +362,13 @@ export default function LiveFeedPage() {
           ) : (
             signalEvents.map((event) => <EventCard key={event.id} event={event} isElite={isElite} />)
           )}
-          {loading && <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center text-sm text-white/50">Loading...</div>}
+          {loading && (
+            <div className="space-y-3">
+              <EventSkeleton />
+              <EventSkeleton />
+              <EventSkeleton />
+            </div>
+          )}
           {isGated && profileLoaded && (
             <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
               <div className="blur-sm pointer-events-none select-none p-4 space-y-3">
