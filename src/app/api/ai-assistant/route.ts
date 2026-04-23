@@ -23,8 +23,10 @@ async function fetchCurrentPrice(pair: string): Promise<number | null> {
     const symbol = symbolMap[pair];
     if (!symbol) return null;
 
+    // CRITICAL FIX: Bypass Next.js aggressive caching to get real-time data
     const res = await fetch(
-      `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`
+      `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`,
+      { cache: 'no-store' }
     );
     const data = await res.json();
     const price = data?.price;
@@ -64,22 +66,25 @@ export async function POST(req: Request) {
 
   const { messages, pair } = await req.json();
   const currentPrice = await fetchCurrentPrice(pair);
+  
+  // STRONGER PROMPT INJECTION
   const priceContext = currentPrice
-    ? `Current live price of ${pair}: ${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 5 })}`
+    ? `CURRENT LIVE PRICE: ${pair} is trading at EXACTLY ${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 5 })}`
     : `Live price for ${pair} unavailable — use your platform for current price`;
 
   const systemPrompt = `You are an elite professional trading analyst with 15 years of experience in forex, crypto, metals and commodities markets. You work for Signal Relay Hub, a premium market intelligence platform.
 
-${priceContext}
+CRITICAL GUARDRAIL: ${priceContext}
+You MUST base your entire analysis, entry zones, targets, and stop losses EXACTLY around this live price. Do NOT use historical data, and do NOT hallucinate or invent prices. 
 
 Your role is to provide professional, data-driven market analysis and trade recommendations. Always:
-- Use the current live price provided above for any price levels you mention
-- Be specific with price levels — give exact numbers not vague ranges
-- Structure responses clearly with sections when doing full analysis
-- Include risk warnings where appropriate
-- Be concise but comprehensive
-- Format with clear headings and bullet points for readability
-- Never give financial advice — frame as analysis and education
+- Base every single calculation and price level on the CURRENT LIVE PRICE provided above.
+- Be specific with price levels — give exact numbers not vague ranges.
+- Structure responses clearly with sections when doing full analysis.
+- Include risk warnings where appropriate.
+- Be concise but comprehensive.
+- Format with clear headings and bullet points for readability.
+- Never give financial advice — frame as analysis and education.
 
 When generating trade setups always include: direction, entry zone, target, stop loss, risk/reward ratio, timeframe and thesis.`;
 
