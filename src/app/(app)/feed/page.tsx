@@ -1,17 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import type { SignalEvent, StatusPayload } from '@/lib/types';
 
 const TAGS = ['all', 'product', 'regulatory', 'funding', 'pricing', 'security', 'partnership', 'talent', 'insider_trading', 'ownership_change', 'merger_acquisition', 'management', 'earnings', 'general'];
 const PAGE_SIZE = 25;
 
-const sentimentColors: Record<string, string> = {
-  positive: 'text-emerald-300',
-  neutral: 'text-white/70',
-  negative: 'text-rose-300',
-};
+const SIGNAL_FILTERS = [
+  { key: 'all', label: 'All signals' },
+  { key: 'trade_prediction', label: 'Trade predictions', elite: true },
+  { key: 'pairs_analysis', label: 'Market analysis' },
+  { key: 'high_impact', label: 'High impact (4-5)' },
+  { key: 'bullish', label: 'Bullish' },
+  { key: 'bearish', label: 'Bearish' },
+  { key: 'sec', label: 'SEC filings' },
+];
 
 const impactColors: Record<string, string> = {
   High: 'bg-rose-500',
@@ -119,22 +123,66 @@ function CalendarCard({ event }: { event: SignalEvent }) {
 }
 
 function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }) {
+  const sentiment = event.sentiment;
+  const isPositive = sentiment === 'positive';
+  const isNegative = sentiment === 'negative';
+
+  const cardBorder = isPositive
+    ? 'border-emerald-500/30 shadow-emerald-500/10 shadow-lg'
+    : isNegative
+    ? 'border-rose-500/30 shadow-rose-500/10 shadow-lg'
+    : 'border-white/10';
+
+  const sentimentBadge = isPositive
+    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+    : isNegative
+    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+    : 'bg-white/5 text-white/50 border border-white/10';
+
+  const sentimentLabel = isPositive
+    ? '▲ Bullish'
+    : isNegative
+    ? '▼ Bearish'
+    : '— Neutral';
+
+  const impactLabel = event.impact_score >= 5 ? 'Critical'
+    : event.impact_score >= 4 ? 'High'
+    : event.impact_score >= 3 ? 'Moderate'
+    : event.impact_score >= 2 ? 'Low'
+    : 'Info';
+
+  const impactBadge = event.impact_score >= 4
+    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+    : event.impact_score >= 3
+    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+    : 'bg-white/5 text-white/40 border border-white/10';
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-white/60">
-        <div className="font-mono text-xs">
-          {event.published_at && !event.published_at.includes('1970')
-            ? new Date(event.published_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-            : new Date(event.fetched_at ?? '').toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+    <div className={`rounded-2xl border bg-white/5 p-4 text-white transition-all ${cardBorder}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs mb-3">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-white/40">
+            {event.published_at && !event.published_at.includes('1970')
+              ? new Date(event.published_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+              : new Date(event.fetched_at ?? '').toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          </span>
+          <span className="rounded-full bg-white/10 px-2 py-0.5 font-medium text-white">{event.company}</span>
+          {event.primary_tag && (
+            <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-200">{event.primary_tag}</span>
+          )}
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white">{event.company}</span>
-          {event.primary_tag && <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-200">{event.primary_tag}</span>}
-          {event.impact_score && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-200">Impact {event.impact_score}</span>}
-          <span className={`text-xs font-semibold ${sentimentColors[event.sentiment] ?? ''}`}>{event.sentiment}</span>
+        <div className="flex items-center gap-1.5">
+          {event.impact_score && (
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${impactBadge}`}>
+              {impactLabel} impact
+            </span>
+          )}
+          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${sentimentBadge}`}>
+            {sentimentLabel}
+          </span>
         </div>
       </div>
-      <div className="mt-2">
+      <div>
         <a href={event.source_url} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-white hover:text-sky-200 leading-snug">
           {event.title}
         </a>
@@ -145,7 +193,7 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
           <div className="text-xs uppercase tracking-wide text-white/40 mb-1.5">Market impact</div>
           <div className="flex flex-wrap gap-1.5">
             {event.pairs_analysis.pairs?.map((p) => (
-              <div key={p.pair} className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
+              <div key={p.pair} className={`flex items-center gap-1 rounded-full border px-2.5 py-0.5 ${p.direction === 'bullish' ? 'border-emerald-500/20 bg-emerald-500/10' : p.direction === 'bearish' ? 'border-rose-500/20 bg-rose-500/10' : 'border-white/10 bg-white/5'}`}>
                 <span className="text-xs font-mono font-medium text-white">{p.pair}</span>
                 <span className={`text-xs font-bold ${p.direction === 'bullish' ? 'text-emerald-400' : p.direction === 'bearish' ? 'text-rose-400' : 'text-white/50'}`}>
                   {p.direction === 'bullish' ? '▲' : p.direction === 'bearish' ? '▼' : '—'}{'●'.repeat(p.strength)}
@@ -219,6 +267,8 @@ function EventSkeleton() {
 export default function LiveFeedPage() {
   const [events, setEvents] = useState<SignalEvent[]>([]);
   const [activeTag, setActiveTag] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -281,11 +331,44 @@ export default function LiveFeedPage() {
 
   const calendarEvents = events.filter((e) => e.company === 'Forex Factory');
   const allSignalEvents = events.filter((e) => e.company !== 'Forex Factory');
+
+  const filteredSignalEvents = useMemo(() => {
+    let filtered = allSignalEvents;
+
+    // Apply signal type filter
+    if (activeFilter === 'trade_prediction') {
+      filtered = filtered.filter(e => e.trade_prediction);
+    } else if (activeFilter === 'pairs_analysis') {
+      filtered = filtered.filter(e => e.pairs_analysis);
+    } else if (activeFilter === 'high_impact') {
+      filtered = filtered.filter(e => (e.impact_score ?? 0) >= 4);
+    } else if (activeFilter === 'bullish') {
+      filtered = filtered.filter(e => e.sentiment === 'positive');
+    } else if (activeFilter === 'bearish') {
+      filtered = filtered.filter(e => e.sentiment === 'negative');
+    } else if (activeFilter === 'sec') {
+      filtered = filtered.filter(e => ['regulatory', 'insider_trading', 'ownership_change', 'merger_acquisition', 'management', 'earnings'].includes(e.primary_tag));
+    }
+
+    // Apply search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(e =>
+        e.title?.toLowerCase().includes(q) ||
+        e.company?.toLowerCase().includes(q) ||
+        e.summary?.toLowerCase().includes(q) ||
+        e.primary_tag?.toLowerCase().includes(q)
+      );
+    }
+
+    return filtered;
+  }, [allSignalEvents, activeFilter, searchQuery]);
+
   const FREE_LIMIT = 5;
-  const signalEvents = isSubscribed ? allSignalEvents : allSignalEvents.slice(0, FREE_LIMIT);
-  const isGated = !isSubscribed && allSignalEvents.length > FREE_LIMIT;
-  const regulatoryCount = signalEvents.filter((e) => e.primary_tag === 'regulatory').length;
-  const avgImpact = signalEvents.length ? (signalEvents.reduce((sum, e) => sum + (e.impact_score ?? 0), 0) / signalEvents.length).toFixed(1) : '—';
+  const signalEvents = isSubscribed ? filteredSignalEvents : filteredSignalEvents.slice(0, FREE_LIMIT);
+  const isGated = !isSubscribed && filteredSignalEvents.length > FREE_LIMIT;
+  const regulatoryCount = filteredSignalEvents.filter((e) => e.primary_tag === 'regulatory').length;
+  const avgImpact = filteredSignalEvents.length ? (filteredSignalEvents.reduce((sum, e) => sum + (e.impact_score ?? 0), 0) / filteredSignalEvents.length).toFixed(1) : '—';
   const flashStatus = status?.collectors?.flash_sec;
   const foundryStatus = status?.collectors?.signal_foundry;
   const queuedDrips = status?.notifier?.queued_drips ?? 0;
@@ -309,8 +392,8 @@ export default function LiveFeedPage() {
           <div className="grid flex-1 gap-3 text-sm text-white/80 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
               <div className="text-xs uppercase tracking-wide text-white/60">Signals</div>
-              <div className="mt-1 text-2xl font-semibold">{signalEvents.length || '—'}</div>
-              <p className="mt-0.5 text-xs text-white/60">This page</p>
+              <div className="mt-1 text-2xl font-semibold">{filteredSignalEvents.length || '—'}</div>
+              <p className="mt-0.5 text-xs text-white/60">Matching filters</p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
               <div className="text-xs uppercase tracking-wide text-white/60">Regulatory</div>
@@ -324,16 +407,61 @@ export default function LiveFeedPage() {
             </div>
           </div>
         </div>
-        <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3">
-          <div className="text-xs uppercase tracking-[0.3em] text-white/50 mb-2">Filter by tag</div>
-          <div className="flex flex-wrap gap-1.5">
-            {TAGS.map((tag) => (
-              <button key={tag} onClick={() => setActiveTag(tag)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${activeTag === tag ? 'bg-white text-neutral-900' : 'bg-white/10 text-white hover:bg-white/20'}`}>
-                {tag}
+
+        <div className="mt-4 space-y-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search signals by company, keyword or tag..."
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/30 pr-10"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-xs">
+                ✕
               </button>
-            ))}
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
+            <div className="text-xs uppercase tracking-[0.3em] text-white/50 mb-2">Signal type</div>
+            <div className="flex flex-wrap gap-1.5">
+              {SIGNAL_FILTERS.map((filter) => {
+                const isLocked = filter.elite && !isElite;
+                return (
+                  <button
+                    key={filter.key}
+                    onClick={() => !isLocked && setActiveFilter(filter.key)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors flex items-center gap-1 ${
+                      activeFilter === filter.key
+                        ? 'bg-white text-neutral-900'
+                        : isLocked
+                        ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    {filter.elite && <span className="text-amber-400">⭐</span>}
+                    {isLocked && <span>🔒</span>}
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
+            <div className="text-xs uppercase tracking-[0.3em] text-white/50 mb-2">Filter by tag</div>
+            <div className="flex flex-wrap gap-1.5">
+              {TAGS.map((tag) => (
+                <button key={tag} onClick={() => setActiveTag(tag)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${activeTag === tag ? 'bg-white text-neutral-900' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
+
         {status && (
           <div className="mt-4 grid gap-3 text-sm text-white/80 md:grid-cols-3">
             <div className="rounded-2xl border border-emerald-300/40 bg-emerald-400/10 p-3">
@@ -358,7 +486,12 @@ export default function LiveFeedPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <section className="space-y-3">
           {signalEvents.length === 0 && !loading ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-white/50">No signals found{activeTag !== 'all' ? ` for tag: ${activeTag}` : ''}.</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+              <div className="text-white/50 text-sm mb-2">No signals match your filters</div>
+              <button onClick={() => { setActiveTag('all'); setActiveFilter('all'); setSearchQuery(''); }} className="text-xs text-sky-400 hover:text-sky-300">
+                Clear all filters
+              </button>
+            </div>
           ) : (
             signalEvents.map((event) => <EventCard key={event.id} event={event} isElite={isElite} />)
           )}
@@ -380,21 +513,12 @@ export default function LiveFeedPage() {
                       {event.impact_score && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-200">Impact {event.impact_score}</span>}
                     </div>
                     <div className="text-sm font-medium text-white">{event.title}</div>
-                    {event.pairs_analysis && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {event.pairs_analysis.pairs?.slice(0, 3).map((p) => (
-                          <span key={p.pair} className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-white/60">
-                            {p.pair} {p.direction === 'bullish' ? 'up' : 'down'}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
               <div className="relative -mt-32 pb-6 px-6 flex flex-col items-center text-center bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent pt-20">
                 <div className="text-xs uppercase tracking-wide text-white/50 mb-2">Free plan limit reached</div>
-                <h3 className="text-lg font-semibold text-white mb-1">{allSignalEvents.length - FREE_LIMIT} more signals available today</h3>
+                <h3 className="text-lg font-semibold text-white mb-1">{filteredSignalEvents.length - FREE_LIMIT} more signals available today</h3>
                 <p className="text-sm text-white/60 mb-3 max-w-sm">Pro members are seeing live SEC alerts, AI market analysis and trade setups for these signals right now.</p>
                 <div className="grid grid-cols-3 gap-3 mb-4 w-full max-w-sm">
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-center">
@@ -419,12 +543,6 @@ export default function LiveFeedPage() {
                     </div>
                     <RotatingBanner />
                   </div>
-                </div>
-                <div className="flex flex-wrap justify-center gap-2 mb-4">
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">Flash SEC alerts</div>
-                  <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-300">Telegram push alerts</div>
-                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300">AI trade predictions</div>
-                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-1.5 text-xs text-purple-300">Market pair analysis</div>
                 </div>
                 <div className="flex gap-3">
                   <a href="/pricing" className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">
