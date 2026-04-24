@@ -3,6 +3,7 @@ import React from 'react';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
+import { ReferralTracker } from './ReferralTracker';
 
 export default async function PricingPage() {
   const cookieStore = await cookies();
@@ -29,7 +30,8 @@ export default async function PricingPage() {
   }
 
   return (
-    <div className="space-y-8">
+   <div className="space-y-8">
+      <ReferralTracker />
       <section className="rounded-3xl bg-neutral-950 p-8 text-white shadow-xl">
         <p className="text-xs uppercase tracking-[0.3em] text-white/50">Pricing</p>
         <h1 className="mt-3 text-3xl font-semibold">Simple, transparent pricing.</h1>
