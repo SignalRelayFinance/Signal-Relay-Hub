@@ -21,7 +21,7 @@ export default async function AccountSettingsPage() {
   if (user?.email) {
     const { data } = await supabase
       .from('profiles')
-      .select('api_key, is_subscribed, is_elite, stripe_customer_id, telegram_chat_id, telegram_tags')
+      .select('api_key, is_subscribed, is_elite, stripe_customer_id, telegram_chat_id, telegram_tags, referral_code, referral_count')
       .eq('email', user.email)
       .single();
     profile = data;
@@ -114,7 +114,32 @@ export default async function AccountSettingsPage() {
             <p className="mt-2 text-sm text-white/60">API key is provisioned automatically once your subscription is active.</p>
           )}
         </div>
-
+        
+  <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white">
+          <div className="text-xs uppercase tracking-wide text-white/50">Referral programme</div>
+          <div className="mt-2 text-xl font-semibold">Refer a friend — get 1 month free</div>
+          <p className="mt-1 text-sm text-white/60">Share your referral link. When someone subscribes using your link you get one month free.</p>
+          {profile?.referral_code ? (
+            <div className="mt-4 space-y-3">
+              <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3">
+                <span className="font-mono text-sm text-white/80 truncate">
+                  https://www.signalrelayhub.io/r/{profile.referral_code}
+                </span>
+                <span className="text-xs text-white/40 shrink-0">Copy link</span>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2">
+                  <div className="text-xs text-white/50">Referrals</div>
+                  <div className="text-xl font-bold text-emerald-400">{profile.referral_count ?? 0}</div>
+                </div>
+                <p className="text-xs text-white/50">Each successful referral earns you one month free on your current plan.</p>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-white/40">Sign up for Pro to get your referral link.</p>
+          )}
+        </div>
+        
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white">
           <div className="text-xs uppercase tracking-wide text-white/50">Automation recipes</div>
           <p className="mt-2 text-sm text-white/60">Drop these into Zapier, n8n, or your own workers.</p>
