@@ -30,12 +30,30 @@ function toLocalDateStr(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function isWithinDays(dateStr: string, days: number): boolean {
+  const date = new Date(dateStr + 'T12:00:00');
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return date >= cutoff;
+}
+
 export default function DigestArchivePage() {
   const today = toLocalDateStr(new Date());
   const [selectedDate, setSelectedDate] = useState(today);
   const [events, setEvents] = useState<DigestEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
+  const FREE_DAY_LIMIT = 3;
+
+  useEffect(() => {
+    fetch('/api/profile').then(r => r.json()).then(p => {
+      setIsSubscribed(p.is_subscribed ?? false);
+      setProfileLoaded(true);
+    }).catch(() => setProfileLoaded(true));
+  }, []);
 
   useEffect(() => {
     async function fetchDates() {
@@ -57,6 +75,8 @@ export default function DigestArchivePage() {
 
   useEffect(() => {
     async function fetchEvents() {
+      if (!profileLoaded) return;
+      if (!isSubscribed && !isWithinDays(selectedDate, FREE_DAY_LIMIT)) return;
       setLoading(true);
       try {
         const res = await fetch('/api/events?limit=500');
@@ -74,8 +94,9 @@ export default function DigestArchivePage() {
       }
     }
     fetchEvents();
-  }, [selectedDate]);
+  }, [selectedDate, isSubscribed, profileLoaded]);
 
+  const isDateLocked = profileLoaded && !isSubscribed && !isWithinDays(selectedDate, FREE_DAY_LIMIT);
   const signalEvents = events.filter(e => (e as any).company !== 'Forex Factory');
   const calendarEvents = events.filter(e => (e as any).company === 'Forex Factory');
   const topTags = Array.from(new Set(signalEvents.map(e => e.primary_tag).filter(Boolean))).slice(0, 5);
@@ -87,7 +108,10 @@ export default function DigestArchivePage() {
         <p className="text-xs uppercase tracking-[0.3em] text-white/50">Digest Archive</p>
         <h1 className="mt-3 text-3xl font-semibold">Daily recaps of market-moving signals.</h1>
         <p className="mt-3 text-sm text-white/70">
-          Pick a date to see all signals, SEC filings, and economic events from that day. Use the calendar to browse history or jump to today.
+          Pick a date to see all signals, SEC filings, and economic events from that day.
+          {!isSubscribed && profileLoaded && (
+            <span className="text-amber-400"> Free plan shows last {FREE_DAY_LIMIT} days. </span>
+          )}
         </p>
       </section>
 
@@ -110,20 +134,57 @@ export default function DigestArchivePage() {
             Today
           </button>
           <div className="flex flex-wrap gap-2">
-            {availableDates.slice(0, 7).map((date) => (
-              <button
-                key={date}
-                onClick={() => setSelectedDate(date)}
-                className={`rounded-full px-3 py-1 text-xs transition-colors ${selectedDate === date ? 'bg-white text-neutral-900' : 'border border-white/10 text-white/50 hover:bg-white/10'}`}
-              >
-                {new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-              </button>
-            ))}
+            {availableDates.slice(0, 7).map((date) => {
+              const locked = profileLoaded && !isSubscribed && !isWithinDays(date, FREE_DAY_LIMIT);
+              return (
+                <button
+                  key={date}
+                  onClick={() => setSelectedDate(date)}
+                  className={`rounded-full px-3 py-1 text-xs transition-colors flex items-center gap-1 ${
+                    selectedDate === date ? 'bg-white text-neutral-900' :
+                    locked ? 'border border-white/10 text-white/20 cursor-not-allowed' :
+                    'border border-white/10 text-white/50 hover:bg-white/10'
+                  }`}
+                >
+                  {locked && <span>🔒</span>}
+                  {new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {loading ? (
+      {isDateLocked ? (
+        <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+          <div className="blur-sm pointer-events-none select-none p-6 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="flex gap-2 mb-2">
+                  <div className="h-4 w-20 rounded bg-white/10" />
+                  <div className="h-4 w-16 rounded bg-purple-500/20" />
+                </div>
+                <div className="h-4 w-3/4 rounded bg-white/10 mb-1" />
+                <div className="h-3 w-1/2 rounded bg-white/5" />
+              </div>
+            ))}
+          </div>
+          <div className="relative -mt-32 pb-8 px-6 flex flex-col items-center text-center bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent pt-20">
+            <div className="text-2xl mb-3">🔒</div>
+            <div className="text-xs uppercase tracking-wide text-white/50 mb-2">Pro feature</div>
+            <h3 className="text-lg font-semibold text-white mb-1">Full archive access requires Pro</h3>
+            <p className="text-sm text-white/60 mb-4 max-w-sm">Free plan shows the last {FREE_DAY_LIMIT} days. Upgrade to Pro to access the complete signal history archive.</p>
+            <div className="flex flex-wrap justify-center gap-2 mb-4">
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">Full archive history</div>
+              <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-300">SEC filing archive</div>
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300">Economic calendar history</div>
+            </div>
+            <a href="/pricing" className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">
+              Upgrade to Pro — £45/mo
+            </a>
+          </div>
+        </div>
+      ) : loading ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-sm text-white/50">
           Loading signals...
         </div>
