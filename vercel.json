@@ -3,6 +3,10 @@
     {
       "path": "/api/telegram/daily-briefing",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/health/pipeline",
+      "schedule": "0 9 * * *"
     }
   ]
 }
