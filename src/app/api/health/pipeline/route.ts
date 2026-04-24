@@ -41,17 +41,18 @@ export async function GET(req: Request) {
     issues.push('Pipeline has not run in over 8 hours — no new events detected');
   }
 
-  // Check 2 — pairs analysis running
+  // Check 2 — pairs analysis running on recent events
+  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
   const { data: unparsed } = await supabase
     .from('sf_events')
     .select('id')
     .is('pairs_analysis', null)
     .gte('impact_score', 3)
-    .gte('fetched_at', eightHoursAgo)
+    .gte('fetched_at', twoHoursAgo)
     .limit(1);
 
   if (unparsed && unparsed.length > 0) {
-    issues.push('Pairs analysis not running — high impact events missing analysis');
+    issues.push('Pairs analysis not running — recent high impact events missing analysis');
   }
 
   // Check 3 — Supabase connection healthy
