@@ -224,7 +224,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mt-6 text-center">
-                  <span className="text-xs text-white/25">Don't have an account? </span>
+                  <span className="text-xs text-white/25">Don&apos;t have an account? </span>
                   <a href="/pricing" className="text-xs text-white/50 hover:text-white transition-colors">
                     View pricing →
                   </a>
