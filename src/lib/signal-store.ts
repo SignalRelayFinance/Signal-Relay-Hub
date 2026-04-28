@@ -51,10 +51,11 @@ export type FetchEventsOptions = {
   offset?: number;
   since?: string;
   tag?: string;
+  date?: string;
 };
 
 export async function fetchEvents(options: FetchEventsOptions = {}): Promise<EventsPayload> {
-  const { limit = 50, since, tag } = options;
+  const { limit = 50, since, tag, date } = options;
 
   if (isSupabaseConfigured()) {
     const admin = await getSupabaseAdmin();
@@ -70,9 +71,17 @@ const baseQuery = admin
   .limit(limit);
 
     const taggedQuery = tag ? baseQuery.eq('primary_tag', tag.toLowerCase()) : baseQuery;
-    const finalQuery = sinceTimestamp
+
+    let finalQuery = sinceTimestamp
       ? taggedQuery.gte('created_at', new Date(sinceTimestamp).toISOString())
       : taggedQuery;
+
+    // Filter by specific date for digest archive
+    if (date) {
+      const dayStart = new Date(`${date}T00:00:00.000Z`).toISOString();
+      const dayEnd = new Date(`${date}T23:59:59.999Z`).toISOString();
+      finalQuery = finalQuery.gte('published', dayStart).lte('published', dayEnd);
+    }
 
     const { data, error } = await finalQuery;
 
