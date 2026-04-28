@@ -4,8 +4,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import type { SignalEvent } from '@/lib/types';
 
-const PAIRS_FILTER = ['all', 'XAUUSD', 'EURUSD', 'BTCUSD', 'GBPUSD', 'USOIL', 'US30', 'ETHUSD'];
-const SENTIMENT_FILTER = ['all', 'bullish', 'bearish', 'neutral'];
+const PAIRS = ['XAUUSD', 'EURUSD', 'BTCUSD', 'GBPUSD', 'USOIL', 'US30', 'ETHUSD'];
 
 type ChatMessage = {
   id: string;
@@ -14,111 +13,106 @@ type ChatMessage = {
   timestamp: Date;
   badge: 'Elite' | 'Pro' | 'Free';
   pair?: string;
+  type?: 'message' | 'trade_idea' | 'system';
+  tradeIdea?: { direction: 'LONG' | 'SHORT'; entry: string; target: string; stop: string };
+};
+
+type PairSentiment = {
+  pair: string;
+  bullish: number;
+  bearish: number;
 };
 
 const DEMO_MESSAGES: ChatMessage[] = [
-  { id: '1', user: 'TraderJoe', message: 'XAUUSD looking strong above 4720, watching for break of 4740 resistance', timestamp: new Date(Date.now() - 5 * 60000), badge: 'Elite', pair: 'XAUUSD' },
-  { id: '2', user: 'FXHunter', message: 'That Fed signal earlier was massive, EUR still under pressure', timestamp: new Date(Date.now() - 3 * 60000), badge: 'Pro', pair: 'EURUSD' },
-  { id: '3', user: 'CryptoKing', message: 'BTC holding 75k support, next leg up incoming if retail sales beat', timestamp: new Date(Date.now() - 2 * 60000), badge: 'Pro', pair: 'BTCUSD' },
-  { id: '4', user: 'ScalpMaster', message: 'Anyone watching the BOE signal? GBP setup looks clean for a short', timestamp: new Date(Date.now() - 1 * 60000), badge: 'Elite', pair: 'GBPUSD' },
+  { id: 'sys1', user: 'System', message: 'Traders Circle is live. Share setups, discuss signals, call moves.', timestamp: new Date(Date.now() - 15 * 60000), badge: 'Elite', type: 'system' },
+  { id: '1', user: 'TraderJoe', message: 'XAUUSD holding 4720 support hard. Fed signal earlier was the catalyst — watching for 4750 break.', timestamp: new Date(Date.now() - 12 * 60000), badge: 'Elite', pair: 'XAUUSD' },
+  { id: '2', user: 'FXHunter', message: 'EUR still under pressure after that ECB filing. Short bias intact below 1.178', timestamp: new Date(Date.now() - 8 * 60000), badge: 'Pro', pair: 'EURUSD' },
+  { id: '3', user: 'ScalpMaster', message: 'GBP setup looks clean for a short — BOE signal + claimant count miss', timestamp: new Date(Date.now() - 5 * 60000), badge: 'Elite', pair: 'GBPUSD', type: 'trade_idea', tradeIdea: { direction: 'SHORT', entry: '1.3520', target: '1.3460', stop: '1.3550' } },
+  { id: '4', user: 'CryptoKing', message: 'BTC holding 75k — retail sales data could be the catalyst for the next leg up', timestamp: new Date(Date.now() - 2 * 60000), badge: 'Pro', pair: 'BTCUSD' },
+];
+
+const INITIAL_SENTIMENT: PairSentiment[] = [
+  { pair: 'XAUUSD', bullish: 72, bearish: 28 },
+  { pair: 'EURUSD', bullish: 35, bearish: 65 },
+  { pair: 'BTCUSD', bullish: 68, bearish: 32 },
+  { pair: 'GBPUSD', bullish: 30, bearish: 70 },
+  { pair: 'USOIL', bullish: 55, bearish: 45 },
+  { pair: 'US30', bullish: 60, bearish: 40 },
 ];
 
 function BadgePill({ badge }: { badge: 'Elite' | 'Pro' | 'Free' }) {
-  if (badge === 'Elite') return <span className="rounded-full bg-amber-400/20 border border-amber-400/30 px-1.5 py-0.5 text-xs font-bold text-amber-400">⭐ Elite</span>;
-  if (badge === 'Pro') return <span className="rounded-full bg-sky-400/20 border border-sky-400/30 px-1.5 py-0.5 text-xs font-bold text-sky-400">Pro</span>;
-  return <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-xs text-white/40">Free</span>;
+  if (badge === 'Elite') return <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-amber-400/20 text-amber-400 border border-amber-400/30">⭐ E</span>;
+  if (badge === 'Pro') return <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-sky-400/20 text-sky-400 border border-sky-400/30">P</span>;
+  return <span className="rounded px-1.5 py-0.5 text-xs bg-white/10 text-white/30">F</span>;
 }
 
-function SignalCard({ event, isElite }: { event: SignalEvent; isElite: boolean; isSubscribed?: boolean }) {
+function SentimentBar({ bullish, bearish }: { bullish: number; bearish: number }) {
+  return (
+    <div className="flex h-1.5 rounded-full overflow-hidden w-full">
+      <div className="bg-emerald-400 transition-all duration-500" style={{ width: `${bullish}%` }} />
+      <div className="bg-rose-400 transition-all duration-500" style={{ width: `${bearish}%` }} />
+    </div>
+  );
+}
+
+function SignalCard({ event, isElite }: { event: SignalEvent; isElite: boolean }) {
   const isPositive = event.sentiment === 'positive';
   const isNegative = event.sentiment === 'negative';
 
-  const cardBorder = isPositive
-    ? 'border-emerald-500/40 shadow-emerald-500/10 shadow-lg'
-    : isNegative
-    ? 'border-rose-500/40 shadow-rose-500/10 shadow-lg'
-    : 'border-white/10';
-
-  const sentimentLabel = isPositive ? '▲ Bullish' : isNegative ? '▼ Bearish' : '— Neutral';
-  const sentimentColor = isPositive ? 'text-emerald-400' : isNegative ? 'text-rose-400' : 'text-white/50';
-
-  const impactLabel = (event.impact_score ?? 0) >= 5 ? 'Critical'
-    : (event.impact_score ?? 0) >= 4 ? 'High'
-    : (event.impact_score ?? 0) >= 3 ? 'Moderate'
-    : 'Low';
-
   return (
-    <div className={`rounded-2xl border bg-white/5 p-4 text-white ${cardBorder}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-white/40">
+    <div className={`rounded-xl border bg-neutral-900/80 p-3 text-white transition-all hover:bg-neutral-900 ${isPositive ? 'border-emerald-500/30' : isNegative ? 'border-rose-500/30' : 'border-white/10'}`}>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-mono text-white/30">
             {event.published_at && !event.published_at.includes('1970')
-              ? new Date(event.published_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-              : new Date(event.fetched_at ?? '').toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              ? new Date(event.published_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+              : new Date(event.fetched_at ?? '').toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
           </span>
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white">{event.company}</span>
+          <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-white/70">{event.company}</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 shrink-0">
           {event.impact_score && (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold border ${(event.impact_score ?? 0) >= 4 ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
-              {impactLabel}
+            <span className={`text-xs font-bold ${(event.impact_score ?? 0) >= 4 ? 'text-rose-400' : 'text-amber-400'}`}>
+              {'█'.repeat(Math.min(event.impact_score ?? 0, 5))}
             </span>
           )}
-          <span className={`text-xs font-bold ${sentimentColor}`}>{sentimentLabel}</span>
+          <span className={`text-xs font-bold ${isPositive ? 'text-emerald-400' : isNegative ? 'text-rose-400' : 'text-white/40'}`}>
+            {isPositive ? '▲' : isNegative ? '▼' : '—'}
+          </span>
         </div>
       </div>
 
-      <a href={event.source_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-white hover:text-sky-200 leading-snug">
+      <a href={event.source_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-white hover:text-sky-300 leading-snug block">
         {event.title}
       </a>
-      {event.summary && <p className="mt-1 text-xs text-white/50 line-clamp-2">{event.summary}</p>}
 
-      {event.pairs_analysis && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {event.pairs_analysis.pairs?.map((p: any) => (
-            <div key={p.pair} className={`flex items-center gap-1 rounded-full border px-2.5 py-1 ${p.direction === 'bullish' ? 'border-emerald-500/30 bg-emerald-500/10' : p.direction === 'bearish' ? 'border-rose-500/30 bg-rose-500/10' : 'border-white/10 bg-white/5'}`}>
-              <span className="text-xs font-mono font-bold text-white">{p.pair}</span>
-              <span className={`text-xs font-bold ${p.direction === 'bullish' ? 'text-emerald-400' : p.direction === 'bearish' ? 'text-rose-400' : 'text-white/50'}`}>
-                {p.direction === 'bullish' ? '▲' : p.direction === 'bearish' ? '▼' : '—'}{'●'.repeat(p.strength ?? 1)}
-              </span>
-            </div>
+      {event.pairs_analysis?.pairs && event.pairs_analysis.pairs.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {event.pairs_analysis.pairs.map((p: any) => (
+            <span key={p.pair} className={`rounded px-1.5 py-0.5 text-xs font-mono font-bold ${p.direction === 'bullish' ? 'bg-emerald-500/20 text-emerald-400' : p.direction === 'bearish' ? 'bg-rose-500/20 text-rose-400' : 'bg-white/5 text-white/40'}`}>
+              {p.pair} {p.direction === 'bullish' ? '▲' : p.direction === 'bearish' ? '▼' : '—'}
+            </span>
           ))}
-          {event.pairs_analysis.overall && (
-            <p className="w-full mt-1 text-xs text-white/40 italic">{event.pairs_analysis.overall}</p>
-          )}
         </div>
       )}
 
       {event.trade_prediction && (
-        <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 relative overflow-hidden">
-          <div className="text-xs uppercase tracking-wide text-amber-400/70 mb-2">⭐ Elite trade setup</div>
-          <div className={isElite ? '' : 'blur-sm pointer-events-none select-none'}>
-            {event.trade_prediction.trades?.map((t: any) => (
-              <div key={t.pair} className="mb-2 last:mb-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono text-xs font-bold text-white">{t.pair}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.direction === 'long' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                    {t.direction === 'long' ? '▲ LONG' : '▼ SHORT'}
-                  </span>
-                  <span className="text-xs text-white/40">{t.timeframe}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div><span className="text-white/40">Entry </span><span className="text-white/80 font-mono">{t.entry_zone}</span></div>
-                  <div><span className="text-white/40">Target </span><span className="text-emerald-400 font-mono">{t.target}</span></div>
-                  <div><span className="text-white/40">Stop </span><span className="text-rose-400 font-mono">{t.stop_loss}</span></div>
-                </div>
-              </div>
-            ))}
-          </div>
-          {!isElite && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/70 backdrop-blur-sm rounded-xl">
-              <div className="text-xs text-amber-400 mb-1">⭐ Elite only</div>
-              <a href="/pricing" className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-neutral-900">
-                Upgrade to Elite
-              </a>
+        <div className={`mt-2 rounded border border-amber-500/20 bg-amber-500/5 p-2 relative overflow-hidden ${!isElite ? 'blur-sm' : ''}`}>
+          {event.trade_prediction.trades?.slice(0, 1).map((t: any) => (
+            <div key={t.pair} className="flex items-center gap-2 text-xs">
+              <span className="font-mono font-bold text-white">{t.pair}</span>
+              <span className={`font-bold ${t.direction === 'long' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {t.direction === 'long' ? '▲ LONG' : '▼ SHORT'}
+              </span>
+              <span className="text-white/40">{t.entry_zone}</span>
+              <span className="text-emerald-400">→{t.target}</span>
+              <span className="text-rose-400">✕{t.stop_loss}</span>
             </div>
-          )}
+          ))}
         </div>
+      )}
+      {event.trade_prediction && !isElite && (
+        <a href="/pricing" className="mt-1 block text-xs text-amber-400 hover:text-amber-300">⭐ Upgrade to Elite to see setup →</a>
       )}
     </div>
   );
@@ -128,12 +122,15 @@ export default function TraderCirclePage() {
   const [events, setEvents] = useState<SignalEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [activePair, setActivePair] = useState('all');
-  const [activeSentiment, setActiveSentiment] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isElite, setIsElite] = useState(false);
+  const [userBadge, setUserBadge] = useState<'Elite' | 'Pro' | 'Free'>('Free');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
   const [chatInput, setChatInput] = useState('');
-  const [userBadge, setUserBadge] = useState<'Elite' | 'Pro' | 'Free'>('Free');
+  const [sentiment, setSentiment] = useState<PairSentiment[]>(INITIAL_SENTIMENT);
+  const [votedPairs, setVotedPairs] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<'signals' | 'ideas' | 'chat'>('signals');
+  const [showTradeForm, setShowTradeForm] = useState(false);
+  const [tradeForm, setTradeForm] = useState({ pair: 'XAUUSD', direction: 'LONG', entry: '', target: '', stop: '', thesis: '' });
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -149,233 +146,362 @@ export default function TraderCirclePage() {
       const res = await fetch('/api/events?limit=100');
       if (!res.ok) throw new Error('fetch failed');
       const data = await res.json() as { events: SignalEvent[] };
-      const marketEvents = (data.events ?? []).filter(e =>
+      const marketEvents = (data.events ?? []).filter((e: SignalEvent) =>
         e.company !== 'Forex Factory' && e.pairs_analysis
       );
       setEvents(marketEvents);
-    } catch {
-      // ignore
-    } finally {
+    } catch { /* ignore */ } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    void loadEvents();
-  }, [loadEvents]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+  useEffect(() => { void loadEvents(); }, [loadEvents]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
 
   const filteredEvents = useMemo(() => {
-    let filtered = events;
-
-    if (activePair !== 'all') {
-      filtered = filtered.filter(e =>
-        e.pairs_analysis?.pairs?.some((p: any) => p.pair === activePair)
-      );
-    }
-
-    if (activeSentiment !== 'all') {
-      filtered = filtered.filter(e => {
-        if (activeSentiment === 'bullish') return e.sentiment === 'positive';
-        if (activeSentiment === 'bearish') return e.sentiment === 'negative';
-        return e.sentiment === 'neutral';
-      });
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(e =>
-        e.title?.toLowerCase().includes(q) ||
-        e.company?.toLowerCase().includes(q) ||
-        e.summary?.toLowerCase().includes(q)
-      );
-    }
-
-    return filtered;
-  }, [events, activePair, activeSentiment, searchQuery]);
+    if (activePair === 'all') return events;
+    return events.filter(e => e.pairs_analysis?.pairs?.some((p: any) => p.pair === activePair));
+  }, [events, activePair]);
 
   const eliteSignals = filteredEvents.filter(e => e.trade_prediction);
   const marketSignals = filteredEvents.filter(e => !e.trade_prediction);
 
+  function vote(pair: string, direction: 'bullish' | 'bearish') {
+    if (votedPairs.has(pair)) return;
+    setVotedPairs(prev => new Set([...prev, pair]));
+    setSentiment(prev => prev.map(s => {
+      if (s.pair !== pair) return s;
+      const total = s.bullish + s.bearish + 1;
+      const newBull = direction === 'bullish' ? s.bullish + 1 : s.bullish;
+      const newBear = direction === 'bearish' ? s.bearish + 1 : s.bearish;
+      return { pair, bullish: Math.round((newBull / total) * 100), bearish: Math.round((newBear / total) * 100) };
+    }));
+  }
+
   function sendChat() {
-    if (!chatInput.trim()) return;
-    if (userBadge === 'Free') return;
-    const newMsg: ChatMessage = {
+    if (!chatInput.trim() || userBadge === 'Free') return;
+    setChatMessages(prev => [...prev, {
       id: Date.now().toString(),
       user: 'You',
       message: chatInput,
       timestamp: new Date(),
       badge: userBadge,
-    };
-    setChatMessages(prev => [...prev, newMsg]);
+      type: 'message',
+    }]);
     setChatInput('');
   }
 
+  function submitTradeIdea() {
+    if (!tradeForm.entry || !tradeForm.target || !tradeForm.stop || userBadge === 'Free') return;
+    setChatMessages(prev => [...prev, {
+      id: Date.now().toString(),
+      user: 'You',
+      message: tradeForm.thesis || `${tradeForm.pair} ${tradeForm.direction} setup`,
+      timestamp: new Date(),
+      badge: userBadge,
+      pair: tradeForm.pair,
+      type: 'trade_idea',
+      tradeIdea: { direction: tradeForm.direction as 'LONG' | 'SHORT', entry: tradeForm.entry, target: tradeForm.target, stop: tradeForm.stop },
+    }]);
+    setShowTradeForm(false);
+    setTradeForm({ pair: 'XAUUSD', direction: 'LONG', entry: '', target: '', stop: '', thesis: '' });
+    setActiveTab('chat');
+  }
+
+  const pairSentimentData = sentiment.find(s => s.pair === activePair);
+
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl bg-neutral-950 p-6 text-white shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-white/60">Traders Circle</p>
-            <h1 className="mt-2 text-2xl font-semibold">Market-moving signals + community.</h1>
-            <p className="mt-1 text-sm text-white/60">Only signals that affect real markets. Trade setups, pair analysis and community discussion.</p>
+    <div className="min-h-screen text-white">
+      <div className="border-b border-white/10 bg-neutral-950/80 backdrop-blur sticky top-0 z-30 px-0">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-white">Traders Circle</span>
+              </div>
+              <div className="text-xs text-white/40 mt-0.5">{filteredEvents.length} market signals · community live</div>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-white/50">{filteredEvents.length} market signals live</span>
+            <BadgePill badge={userBadge} />
+            {userBadge !== 'Free' && (
+              <button onClick={() => { setShowTradeForm(true); setActiveTab('ideas'); }}
+                className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-400/20 transition-colors">
+                + Post idea
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="mt-4 space-y-3">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by company, keyword or pair..."
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/30"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-xs">✕</button>
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 px-4 pb-2">
+            <button onClick={() => setActivePair('all')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-mono font-bold whitespace-nowrap transition-colors ${activePair === 'all' ? 'bg-white text-neutral-900' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}>
+              ALL
+            </button>
+            {PAIRS.map(pair => {
+              const s = sentiment.find(x => x.pair === pair);
+              const bias = s ? (s.bullish > s.bearish ? 'bull' : 'bear') : null;
+              return (
+                <button key={pair} onClick={() => setActivePair(pair)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-mono font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 ${activePair === pair ? 'bg-white text-neutral-900' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}>
+                  {pair}
+                  {bias && <span className={bias === 'bull' ? 'text-emerald-400' : 'text-rose-400'}>{bias === 'bull' ? '▲' : '▼'}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_380px] gap-0 min-h-[calc(100vh-120px)]">
+        <div className="border-r border-white/10">
+          <div className="flex border-b border-white/10">
+            {(['signals', 'ideas', 'chat'] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors ${activeTab === tab ? 'border-b-2 border-white text-white' : 'text-white/30 hover:text-white/60'}`}>
+                {tab === 'signals' ? `Signals ${filteredEvents.length > 0 ? `(${filteredEvents.length})` : ''}` : tab === 'ideas' ? 'Trade Ideas' : 'Discussion'}
+              </button>
+            ))}
+          </div>
+
+          <div className="overflow-y-auto" style={{ height: 'calc(100vh - 200px)' }}>
+            {activeTab === 'signals' && (
+              <div className="p-3 space-y-2">
+                {eliteSignals.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-1 py-1">
+                      <span className="text-xs font-mono text-amber-400 uppercase tracking-widest">⭐ Elite setups</span>
+                      <div className="flex-1 h-px bg-amber-400/20" />
+                      <span className="text-xs text-amber-400/60">{eliteSignals.length}</span>
+                    </div>
+                    {eliteSignals.map(event => <SignalCard key={event.id} event={event} isElite={isElite} />)}
+                  </div>
+                )}
+                {marketSignals.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-1 py-1">
+                      <span className="text-xs font-mono text-white/40 uppercase tracking-widest">Market signals</span>
+                      <div className="flex-1 h-px bg-white/10" />
+                      <span className="text-xs text-white/30">{marketSignals.length}</span>
+                    </div>
+                    {marketSignals.map(event => <SignalCard key={event.id} event={event} isElite={isElite} />)}
+                  </div>
+                )}
+                {loading && [1,2,3].map(i => (
+                  <div key={i} className="rounded-xl border border-white/10 bg-neutral-900/80 p-3 animate-pulse">
+                    <div className="h-3 w-1/3 bg-white/10 rounded mb-2" />
+                    <div className="h-4 w-3/4 bg-white/10 rounded" />
+                  </div>
+                ))}
+                {!loading && filteredEvents.length === 0 && (
+                  <div className="p-8 text-center text-white/30 text-sm">No market signals for {activePair === 'all' ? 'any pair' : activePair} yet</div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'ideas' && (
+              <div className="p-3 space-y-3">
+                {showTradeForm && userBadge !== 'Free' && (
+                  <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4 space-y-3">
+                    <div className="text-xs font-bold text-amber-400 uppercase tracking-wide">Post a trade idea</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select value={tradeForm.pair} onChange={e => setTradeForm(p => ({...p, pair: e.target.value}))}
+                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white focus:outline-none">
+                        {PAIRS.map(p => <option key={p} value={p} className="bg-neutral-900">{p}</option>)}
+                      </select>
+                      <select value={tradeForm.direction} onChange={e => setTradeForm(p => ({...p, direction: e.target.value}))}
+                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white focus:outline-none">
+                        <option value="LONG" className="bg-neutral-900">▲ LONG</option>
+                        <option value="SHORT" className="bg-neutral-900">▼ SHORT</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['entry', 'target', 'stop'] as const).map(field => (
+                        <input key={field} type="text" placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                          value={tradeForm[field]} onChange={e => setTradeForm(p => ({...p, [field]: e.target.value}))}
+                          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/20 focus:outline-none font-mono" />
+                      ))}
+                    </div>
+                    <input type="text" placeholder="Thesis (optional)" value={tradeForm.thesis}
+                      onChange={e => setTradeForm(p => ({...p, thesis: e.target.value}))}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/20 focus:outline-none" />
+                    <div className="flex gap-2">
+                      <button onClick={submitTradeIdea} className="flex-1 rounded-lg bg-amber-400 py-2 text-xs font-bold text-neutral-900">Post idea</button>
+                      <button onClick={() => setShowTradeForm(false)} className="rounded-lg border border-white/10 px-4 py-2 text-xs text-white/50">Cancel</button>
+                    </div>
+                  </div>
+                )}
+                {chatMessages.filter(m => m.type === 'trade_idea').map(msg => (
+                  <div key={msg.id} className={`rounded-xl border p-3 ${msg.tradeIdea?.direction === 'LONG' ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <BadgePill badge={msg.badge} />
+                        <span className="text-xs font-semibold text-white">{msg.user}</span>
+                        {msg.pair && <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-mono text-white/60">{msg.pair}</span>}
+                      </div>
+                      <span className="text-xs text-white/25">{msg.timestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    {msg.tradeIdea && (
+                      <div className="flex items-center gap-3 text-xs font-mono">
+                        <span className={`font-bold text-sm ${msg.tradeIdea.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {msg.tradeIdea.direction === 'LONG' ? '▲' : '▼'} {msg.tradeIdea.direction}
+                        </span>
+                        <span className="text-white/40">Entry <span className="text-white">{msg.tradeIdea.entry}</span></span>
+                        <span className="text-white/40">TP <span className="text-emerald-400">{msg.tradeIdea.target}</span></span>
+                        <span className="text-white/40">SL <span className="text-rose-400">{msg.tradeIdea.stop}</span></span>
+                      </div>
+                    )}
+                    {msg.message && <p className="text-xs text-white/60 mt-1">{msg.message}</p>}
+                  </div>
+                ))}
+                {chatMessages.filter(m => m.type === 'trade_idea').length === 0 && !showTradeForm && (
+                  <div className="p-8 text-center">
+                    <div className="text-white/30 text-sm mb-3">No trade ideas posted yet</div>
+                    {userBadge !== 'Free' ? (
+                      <button onClick={() => setShowTradeForm(true)} className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold text-amber-400">
+                        Post the first idea
+                      </button>
+                    ) : (
+                      <a href="/pricing" className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/50">
+                        Upgrade to post ideas
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'chat' && (
+              <div className="flex flex-col h-full">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  {chatMessages.map(msg => (
+                    <div key={msg.id}>
+                      {msg.type === 'system' ? (
+                        <div className="text-center py-2">
+                          <span className="text-xs text-white/20 font-mono">{msg.message}</span>
+                        </div>
+                      ) : (
+                        <div className={`flex gap-2 ${msg.user === 'You' ? 'flex-row-reverse' : ''}`}>
+                          <div className={`max-w-[80%] rounded-xl px-3 py-2 ${msg.user === 'You' ? 'bg-amber-400/15 border border-amber-400/20' : 'bg-white/5 border border-white/10'}`}>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <BadgePill badge={msg.badge} />
+                              <span className="text-xs font-semibold text-white">{msg.user}</span>
+                              {msg.pair && <span className="rounded bg-white/10 px-1 py-0.5 text-xs font-mono text-white/40">{msg.pair}</span>}
+                              <span className="text-xs text-white/20">{msg.timestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            <p className="text-xs text-white/80 leading-relaxed">{msg.message}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </div>
+                <div className="border-t border-white/10 p-3">
+                  {userBadge === 'Free' ? (
+                    <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                      <span className="text-xs text-white/30">Pro or Elite to chat</span>
+                      <a href="/pricing" className="text-xs text-sky-400 hover:text-sky-300">Upgrade →</a>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && sendChat()}
+                        placeholder="Share your analysis..."
+                        className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/20 focus:outline-none focus:border-white/30" />
+                      <button onClick={sendChat} disabled={!chatInput.trim()}
+                        className="rounded-lg bg-white px-3 text-xs font-bold text-neutral-900 disabled:opacity-30">↑</button>
+                    </div>
+                  )}
+                  <p className="text-xs text-white/15 mt-1.5 text-center">No financial advice · SRH community rules apply</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <aside className="hidden lg:flex flex-col border-l border-white/10 bg-neutral-950/50">
+          <div className="p-4 border-b border-white/10">
+            <div className="text-xs font-mono uppercase tracking-widest text-white/40 mb-3">Community sentiment</div>
+            <div className="space-y-3">
+              {sentiment.map(s => {
+                const voted = votedPairs.has(s.pair);
+                const isActive = activePair === s.pair || activePair === 'all';
+                return (
+                  <div key={s.pair} className={`transition-opacity ${isActive ? 'opacity-100' : 'opacity-30'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-white">{s.pair}</span>
+                        <span className={`text-xs font-bold ${s.bullish > s.bearish ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {s.bullish > s.bearish ? `▲ ${s.bullish}%` : `▼ ${s.bearish}%`}
+                        </span>
+                      </div>
+                      {!voted ? (
+                        <div className="flex gap-1">
+                          <button onClick={() => vote(s.pair, 'bullish')} className="rounded px-1.5 py-0.5 text-xs bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors">▲</button>
+                          <button onClick={() => vote(s.pair, 'bearish')} className="rounded px-1.5 py-0.5 text-xs bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors">▼</button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-white/20">voted</span>
+                      )}
+                    </div>
+                    <SentimentBar bullish={s.bullish} bearish={s.bearish} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="p-4 border-b border-white/10">
+            <div className="text-xs font-mono uppercase tracking-widest text-white/40 mb-3">Pair focus</div>
+            {pairSentimentData && activePair !== 'all' ? (
+              <div className="space-y-2">
+                <div className="text-2xl font-mono font-bold text-white">{activePair}</div>
+                <div className="flex items-center gap-3">
+                  <div className="text-emerald-400 text-sm font-bold">{pairSentimentData.bullish}% bull</div>
+                  <div className="text-rose-400 text-sm font-bold">{pairSentimentData.bearish}% bear</div>
+                </div>
+                <SentimentBar bullish={pairSentimentData.bullish} bearish={pairSentimentData.bearish} />
+                <div className="text-xs text-white/30 mt-2">
+                  {filteredEvents.filter(e => e.sentiment === 'positive').length} bullish signals ·{' '}
+                  {filteredEvents.filter(e => e.sentiment === 'negative').length} bearish signals
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-white/30">Select a pair to see detailed stats</div>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <div className="flex flex-wrap gap-1.5">
-              <span className="text-xs text-white/40 self-center">Pair:</span>
-              {PAIRS_FILTER.map(pair => (
-                <button key={pair} onClick={() => setActivePair(pair)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${activePair === pair ? 'bg-white text-neutral-900' : 'bg-white/10 text-white hover:bg-white/20'}`}>
-                  {pair}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              <span className="text-xs text-white/40 self-center">Bias:</span>
-              {SENTIMENT_FILTER.map(s => (
-                <button key={s} onClick={() => setActiveSentiment(s)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${activeSentiment === s
-                    ? s === 'bullish' ? 'bg-emerald-500 text-white'
-                    : s === 'bearish' ? 'bg-rose-500 text-white'
-                    : 'bg-white text-neutral-900'
-                    : 'bg-white/10 text-white hover:bg-white/20'}`}>
-                  {s === 'bullish' ? '▲ Bullish' : s === 'bearish' ? '▼ Bearish' : s === 'neutral' ? '— Neutral' : 'All'}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-4">
-          {eliteSignals.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wide text-amber-400">⭐ Elite trade setups</span>
-                <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs text-amber-400">{eliteSignals.length}</span>
-              </div>
-              {eliteSignals.map(event => (
-                <SignalCard key={event.id} event={event} isElite={isElite} />
-              ))}
-            </div>
-          )}
-
-          {marketSignals.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wide text-white/50">Market signals</span>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/50">{marketSignals.length}</span>
-              </div>
-              {marketSignals.map(event => (
-                <SignalCard key={event.id} event={event} isElite={isElite} />
-              ))}
-            </div>
-          )}
-
-          {loading && (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse">
-                  <div className="h-4 w-1/2 bg-white/10 rounded mb-3" />
-                  <div className="h-5 w-3/4 bg-white/10 rounded mb-2" />
-                  <div className="h-4 w-full bg-white/10 rounded" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!loading && filteredEvents.length === 0 && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-              <div className="text-white/50 text-sm mb-2">No market signals match your filters</div>
-              <button onClick={() => { setActivePair('all'); setActiveSentiment('all'); setSearchQuery(''); }}
-                className="text-xs text-sky-400 hover:text-sky-300">Clear filters</button>
-            </div>
-          )}
-        </div>
-
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-neutral-950 overflow-hidden flex flex-col sticky top-6" style={{ height: '75vh' }}>
-            <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-sm font-semibold text-white">Community chat</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <BadgePill badge={userBadge} />
+          <div className="p-4 flex-1">
+            <div className="text-xs font-mono uppercase tracking-widest text-white/40 mb-3">Membership perks</div>
+            <div className="space-y-2">
+              <div className={`rounded-lg border p-2.5 ${userBadge === 'Elite' ? 'border-amber-400/30 bg-amber-400/5' : 'border-white/5 bg-white/3 opacity-40'}`}>
+                <div className="text-xs font-bold text-amber-400 mb-1">⭐ Elite</div>
+                <div className="text-xs text-white/50 space-y-0.5">
+                  <div>· AI trade predictions on every signal</div>
+                  <div>· Daily AI briefing at 7am</div>
+                  <div>· Pre-event alerts 15min before news</div>
+                  <div>· AI Trading Assistant</div>
+                  <div>· Elite badge in Traders Circle</div>
                 </div>
               </div>
-              <p className="text-xs text-white/40 mt-1">Discuss setups, share ideas, call moves</p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
-              {chatMessages.map(msg => (
-                <div key={msg.id} className={`${msg.user === 'You' ? 'flex flex-col items-end' : ''}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-3 py-2 ${msg.user === 'You' ? 'bg-amber-400/20 border border-amber-400/20' : 'bg-white/5 border border-white/10'}`}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs font-semibold text-white">{msg.user}</span>
-                      <BadgePill badge={msg.badge} />
-                      {msg.pair && <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-mono text-white/60">{msg.pair}</span>}
-                    </div>
-                    <p className="text-xs text-white/80">{msg.message}</p>
-                    <p className="text-xs text-white/25 mt-1">
-                      {msg.timestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
+              <div className={`rounded-lg border p-2.5 ${userBadge === 'Pro' || userBadge === 'Elite' ? 'border-sky-400/30 bg-sky-400/5' : 'border-white/5 bg-white/3 opacity-40'}`}>
+                <div className="text-xs font-bold text-sky-400 mb-1">Pro</div>
+                <div className="text-xs text-white/50 space-y-0.5">
+                  <div>· Full signal feed unlimited</div>
+                  <div>· Telegram push alerts</div>
+                  <div>· Flash SEC filings</div>
+                  <div>· Chat + trade ideas in Traders Circle</div>
+                  <div>· API key access</div>
                 </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-
-            <div className="border-t border-white/10 p-3">
-              {userBadge === 'Free' ? (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                  <p className="text-xs text-white/50 mb-2">Pro or Elite required to chat</p>
-                  <a href="/pricing" className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-neutral-900">
-                    Upgrade to join
-                  </a>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && sendChat()}
-                    placeholder="Share your analysis..."
-                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30"
-                  />
-                  <button onClick={sendChat} disabled={!chatInput.trim()}
-                    className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-neutral-900 disabled:opacity-40">
-                    Send
-                  </button>
-                </div>
+              </div>
+              {userBadge === 'Free' && (
+                <a href="/pricing" className="block rounded-lg bg-white py-2 text-center text-xs font-bold text-neutral-900 hover:bg-white/90 transition-colors mt-3">
+                  Upgrade now
+                </a>
               )}
-              <p className="text-xs text-white/20 mt-2 text-center">Be respectful · No financial advice · SRH rules apply</p>
             </div>
           </div>
         </aside>
