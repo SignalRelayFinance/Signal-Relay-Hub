@@ -214,7 +214,7 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
                 <span className={`text-xs font-bold ${event.trade_prediction.confidence_score >= 75 ? 'text-emerald-400' : event.trade_prediction.confidence_score >= 55 ? 'text-amber-400' : 'text-rose-400'}`}>
                   {event.trade_prediction.confidence_score}% confidence
                 </span>
-                {event.trade_prediction.corroborating_signals > 0 && (
+                {(event.trade_prediction.corroborating_signals ?? 0) > 0 && (
                   <span className="text-xs text-white/30">{event.trade_prediction.corroborating_signals} corroborating signals</span>
                 )}
               </div>
