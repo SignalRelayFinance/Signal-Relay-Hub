@@ -79,12 +79,13 @@ const tiers = [
     features: [
       'Everything in Free',
       'Flash SEC alerts — 8-K, 13D/G, Form 4',
-      '28+ live sources',
+      '28+ live sources — AI labs, fintechs, regulators',
       'Telegram push alerts with tag filtering',
-      'Market pair impact analysis',
-      'Self-serve API key',
-      'Digest archive + social drip queue',
-      '6-hourly pipeline, 24/7',
+      'AI market pair impact analysis',
+      'Self-serve API key for your stack',
+      'Full digest archive history',
+      'Traders Circle chat + trade ideas',
+      'Pro badge in community',
     ],
     locked: [
       'AI trade direction predictions',
@@ -105,14 +106,15 @@ const tiers = [
     labelColor: 'text-amber-300',
     features: [
       'Everything in Pro',
-      'AI trade direction predictions',
-      'Entry zones, targets, stop losses',
-      'Daily AI briefing — top 5 signals',
-      'Economic calendar Telegram alerts',
-      'Email digest delivery',
-      'Slack integration',
+      'AI trade predictions with confidence score',
+      'Signals 30 min before Pro tier',
+      'Daily AI briefing at 7am',
+      'Pre-event alerts 15 min before red folder events',
+      'Post-event AI debrief + updated trade setups',
+      'Weekly macro outlook every Sunday',
+      'AI Trading Assistant — scalp/swing/risk reports',
+      'Traders Circle Elite badge + trade ideas',
       'Unlimited API calls',
-      'Priority signal scoring',
     ],
     locked: [],
     cta: 'Get Elite — £150/mo',
@@ -265,16 +267,14 @@ export default function LandingPage() {
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-10 sm:py-14">
 
         <header className="flex items-center justify-between">
-          <div className="text-lg font-semibold">Signal Relay Hub</div>
-          <nav className="flex items-center gap-4 text-sm text-neutral-300">
-            <div className="flex items-center gap-3">
-              <Link className="text-sm text-white/70 hover:text-white transition-colors" href="/login">
-                Sign in
-              </Link>
-              <Link className="rounded-full bg-white px-4 py-2 text-sm text-neutral-900 hover:bg-neutral-200" href="/pricing">
-                Get started
-              </Link>
-            </div>
+          <Link href="/feed" className="text-lg font-semibold hover:opacity-80 transition-opacity">Signal Relay Hub</Link>
+          <nav className="flex items-center gap-3 text-sm text-neutral-300">
+            <Link className="text-sm text-white/70 hover:text-white transition-colors" href="/login">
+              Sign in
+            </Link>
+            <Link className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors" href="/login">
+              Get started free
+            </Link>
           </nav>
         </header>
 
@@ -293,10 +293,10 @@ export default function LandingPage() {
                 or pricing change hits, we push it to Telegram, email, and your API stack within minutes.
               </p>
               <div className="mt-8 flex flex-wrap justify-center sm:justify-start gap-4">
-                <Link href="/pricing" className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200">
-                  Explore free options
+                <Link href="/login" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
+                  Start for free →
                 </Link>
-                <Link href="/feed" className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10">
+                <Link href="/feed" className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors">
                   View live feed
                 </Link>
               </div>
@@ -407,7 +407,7 @@ export default function LandingPage() {
               </table>
             </div>
             <div className="mt-6 flex justify-center">
-              <Link href="/pricing" className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
+              <Link href="/login" className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
                 Get started free
               </Link>
             </div>
