@@ -107,6 +107,7 @@ export default function LoginPage() {
       <GridBackground />
 
       <div className="relative flex min-h-screen">
+
         {/* Left panel */}
         <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 border-r border-white/5">
           <div>
@@ -144,7 +145,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-         <div className="space-y-2">
+          <div className="space-y-2">
             <div className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2">
               <p className="text-xs text-white/20 leading-relaxed">
                 ⚠️ For educational purposes only. Not financial advice. All signals carry risk. Trade at your own risk.
@@ -154,6 +155,7 @@ export default function LoginPage() {
               © 2026 Signal Relay Hub · signalrelayhub.io
             </div>
           </div>
+        </div>
 
         {/* Right panel — login form */}
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
@@ -223,7 +225,7 @@ export default function LoginPage() {
                   </div>
                 )}
 
-               <div className="mt-6 pt-6 border-t border-white/5 space-y-3">
+                <div className="mt-6 pt-6 border-t border-white/5 space-y-3">
                   <div className="text-xs text-white/25 text-center leading-relaxed">
                     No password required · Link expires after use · Secured by Supabase
                   </div>
@@ -244,6 +246,7 @@ export default function LoginPage() {
             )}
           </div>
         </div>
+
       </div>
     </div>
   );
