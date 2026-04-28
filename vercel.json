@@ -7,10 +7,6 @@
     {
       "path": "/api/health/pipeline",
       "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/telegram/weekly-outlook",
-      "schedule": "0 18 * * 0"
     }
   ]
 }
