@@ -144,10 +144,16 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="text-xs text-white/20 font-mono">
-            © 2026 Signal Relay Hub · signalrelayhub.io
+         <div className="space-y-2">
+            <div className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2">
+              <p className="text-xs text-white/20 leading-relaxed">
+                ⚠️ For educational purposes only. Not financial advice. All signals carry risk. Trade at your own risk.
+              </p>
+            </div>
+            <div className="text-xs text-white/20 font-mono">
+              © 2026 Signal Relay Hub · signalrelayhub.io
+            </div>
           </div>
-        </div>
 
         {/* Right panel — login form */}
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
@@ -217,9 +223,14 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <div className="mt-6 pt-6 border-t border-white/5">
+               <div className="mt-6 pt-6 border-t border-white/5 space-y-3">
                   <div className="text-xs text-white/25 text-center leading-relaxed">
                     No password required · Link expires after use · Secured by Supabase
+                  </div>
+                  <div className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5">
+                    <p className="text-xs text-white/20 text-center leading-relaxed">
+                      ⚠️ Signal Relay Hub is for <span className="text-white/35">educational and informational purposes only</span>. Nothing on this platform constitutes financial advice. All signals, predictions and analysis are AI-generated and carry risk. Trade at your own risk.
+                    </p>
                   </div>
                 </div>
 
