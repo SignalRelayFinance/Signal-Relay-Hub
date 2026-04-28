@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { DripQueueForm } from '@/components/drip-queue-form';
