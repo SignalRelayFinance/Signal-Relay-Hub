@@ -28,6 +28,8 @@ export interface TradePrediction {
   trades: TradeSetup[];
   market_summary: string;
   do_not_trade: string;
+  confidence_score?: number;
+  corroborating_signals?: number;
 }
 
 export interface SignalEvent {
