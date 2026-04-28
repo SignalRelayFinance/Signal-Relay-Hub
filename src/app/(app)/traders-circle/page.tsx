@@ -29,7 +29,7 @@ function BadgePill({ badge }: { badge: 'Elite' | 'Pro' | 'Free' }) {
   return <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-xs text-white/40">Free</span>;
 }
 
-function SignalCard({ event, isElite, isSubscribed }: { event: SignalEvent; isElite: boolean; isSubscribed: boolean }) {
+function SignalCard({ event, isElite }: { event: SignalEvent; isElite: boolean; isSubscribed?: boolean }) {
   const isPositive = event.sentiment === 'positive';
   const isNegative = event.sentiment === 'negative';
 
@@ -131,8 +131,8 @@ export default function TraderCirclePage() {
   const [activeSentiment, setActiveSentiment] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isElite, setIsElite] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+ const [_isSubscribed, setIsSubscribed] = useState(false);
+  const [_profileLoaded, setProfileLoaded] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
   const [chatInput, setChatInput] = useState('');
   const [userBadge, setUserBadge] = useState<'Elite' | 'Pro' | 'Free'>('Free');
