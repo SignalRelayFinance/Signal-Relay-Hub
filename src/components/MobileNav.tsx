@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: '/settings', label: 'Account' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/ai-assistant', label: 'AI Assistant' },
+  { href: '/traders-circle', label: 'Traders Circle' },
 ];
 
 export function MobileNav() {
