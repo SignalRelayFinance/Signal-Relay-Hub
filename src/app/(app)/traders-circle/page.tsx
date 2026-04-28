@@ -131,8 +131,6 @@ export default function TraderCirclePage() {
   const [activeSentiment, setActiveSentiment] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isElite, setIsElite] = useState(false);
- const [_isSubscribed, setIsSubscribed] = useState(false);
-  const [_profileLoaded, setProfileLoaded] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
   const [chatInput, setChatInput] = useState('');
   const [userBadge, setUserBadge] = useState<'Elite' | 'Pro' | 'Free'>('Free');
@@ -141,9 +139,7 @@ export default function TraderCirclePage() {
   useEffect(() => {
     fetch('/api/profile').then(r => r.json()).then(p => {
       setIsElite(p.is_elite ?? false);
-      setIsSubscribed(p.is_subscribed ?? false);
       setUserBadge(p.is_elite ? 'Elite' : p.is_subscribed ? 'Pro' : 'Free');
-      setProfileLoaded(true);
     }).catch(() => setProfileLoaded(true));
   }, []);
 
