@@ -39,7 +39,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     <div className="flex h-full flex-col bg-neutral-950 border-r border-white/5">
       <div className="flex items-center gap-2.5 px-4 py-5 border-b border-white/5">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-        <Link href="/" onClick={onClose} className="font-mono text-xs font-bold uppercase tracking-widest text-white truncate">
+        <Link href="/feed" onClick={onClose} className="font-mono text-xs font-bold uppercase tracking-widest text-white truncate">
           Signal Relay Hub
         </Link>
       </div>
