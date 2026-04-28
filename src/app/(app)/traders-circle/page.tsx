@@ -140,16 +140,45 @@ export default function TraderCirclePage() {
     }).catch(() => {});
   }, []);
 
-  const loadEvents = useCallback(async () => {
+ const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/events?limit=100');
+      const res = await fetch('/api/events?limit=200');
       if (!res.ok) throw new Error('fetch failed');
       const data = await res.json() as { events: SignalEvent[] };
-      const marketEvents = (data.events ?? []).filter((e: SignalEvent) =>
-        e.company !== 'Forex Factory' && e.pairs_analysis
-      );
-      setEvents(marketEvents);
+
+      // Filter to only genuinely market-moving signals
+      const marketEvents = (data.events ?? []).filter((e: SignalEvent) => {
+        if (e.company === 'Forex Factory') return false;
+        if (!e.pairs_analysis) return false;
+
+        // Filter out signals where ALL pairs are neutral — no real market impact
+        const pairs = e.pairs_analysis?.pairs ?? [];
+        const hasDirectionalPair = pairs.some((p: any) => p.direction === 'bullish' || p.direction === 'bearish');
+        if (!hasDirectionalPair) return false;
+
+        // Filter out low value SEC form types
+        const lowValueForms = ['497k', '497', 'n-14', 'n-2', 'n-csr', 's-11', 'ars', 'defa14a', 'def 14a'];
+        const titleLower = (e.title ?? '').toLowerCase();
+        if (lowValueForms.some(f => titleLower.includes(f))) return false;
+
+        // Must have impact score of at least 2
+        if ((e.impact_score ?? 0) < 2) return false;
+
+        return true;
+      });
+
+      // Deduplicate by company — only show the highest impact signal per company per session
+      const seen = new Map<string, SignalEvent>();
+      for (const event of marketEvents) {
+        const key = event.company;
+        const existing = seen.get(key);
+        if (!existing || (event.impact_score ?? 0) > (existing.impact_score ?? 0)) {
+          seen.set(key, event);
+        }
+      }
+
+      setEvents(Array.from(seen.values()));
     } catch { /* ignore */ } finally {
       setLoading(false);
     }
