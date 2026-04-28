@@ -1,0 +1,18 @@
+name: Weekly Macro Outlook
+
+on:
+  schedule:
+    - cron: '0 18 * * 0'
+  workflow_dispatch:
+
+jobs:
+  outlook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send weekly macro outlook
+        env:
+          PROVISION_WEBHOOK_SECRET: ${{ secrets.PROVISION_WEBHOOK_SECRET }}
+        run: |
+          curl -s -X POST https://www.signalrelayhub.io/api/telegram/weekly-outlook \
+            -H "Content-Type: application/json" \
+            -H "x-provision-secret: $PROVISION_WEBHOOK_SECRET"
