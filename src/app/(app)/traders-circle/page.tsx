@@ -168,7 +168,7 @@ export default function TraderCirclePage() {
 
   function vote(pair: string, direction: 'bullish' | 'bearish') {
     if (votedPairs.has(pair)) return;
-    setVotedPairs(prev => new Set([...prev, pair]));
+   setVotedPairs(prev => { const next = new Set(prev); next.add(pair); return next; });
     setSentiment(prev => prev.map(s => {
       if (s.pair !== pair) return s;
       const total = s.bullish + s.bearish + 1;
