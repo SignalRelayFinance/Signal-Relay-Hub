@@ -140,7 +140,7 @@ export default function TraderCirclePage() {
     fetch('/api/profile').then(r => r.json()).then(p => {
       setIsElite(p.is_elite ?? false);
       setUserBadge(p.is_elite ? 'Elite' : p.is_subscribed ? 'Pro' : 'Free');
-    }).catch(() => setProfileLoaded(true));
+    }).catch(() => {});
   }, []);
 
   const loadEvents = useCallback(async () => {
