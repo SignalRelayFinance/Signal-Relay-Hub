@@ -25,7 +25,7 @@ const NAV_GROUPS = [
   {
     label: 'Account',
     items: [
-      { href: '/pricing', label: 'Pricing', icon: '💎' },
+      { href: '/pricing', label: 'Upgrade Plans', icon: '💎' },
       { href: '/settings', label: 'Account', icon: '⚙️' },
       { href: '/disclaimer', label: 'Disclaimer', icon: '⚠️' },
     ],
