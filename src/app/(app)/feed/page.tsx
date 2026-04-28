@@ -206,7 +206,20 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
       )}
       {event.trade_prediction && (
         <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 relative overflow-hidden">
-          <div className="text-xs uppercase tracking-wide text-amber-400/70 mb-2">Elite — Trade predictions</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs uppercase tracking-wide text-amber-400/70">Elite — Trade predictions</div>
+            {event.trade_prediction.confidence_score && (
+              <div className="flex items-center gap-1.5">
+                <div className={`h-1.5 w-1.5 rounded-full ${event.trade_prediction.confidence_score >= 75 ? 'bg-emerald-400' : event.trade_prediction.confidence_score >= 55 ? 'bg-amber-400' : 'bg-rose-400'}`} />
+                <span className={`text-xs font-bold ${event.trade_prediction.confidence_score >= 75 ? 'text-emerald-400' : event.trade_prediction.confidence_score >= 55 ? 'text-amber-400' : 'text-rose-400'}`}>
+                  {event.trade_prediction.confidence_score}% confidence
+                </span>
+                {event.trade_prediction.corroborating_signals > 0 && (
+                  <span className="text-xs text-white/30">{event.trade_prediction.corroborating_signals} corroborating signals</span>
+                )}
+              </div>
+            )}
+          </div>
           <div className={isElite ? '' : 'blur-sm pointer-events-none select-none'}>
             {event.trade_prediction.trades?.map((t) => (
               <div key={t.pair} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-white/10">
