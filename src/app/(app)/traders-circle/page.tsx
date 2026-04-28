@@ -279,7 +279,7 @@ export default function TraderCirclePage() {
                 <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs text-amber-400">{eliteSignals.length}</span>
               </div>
               {eliteSignals.map(event => (
-                <SignalCard key={event.id} event={event} isElite={isElite} isSubscribed={isSubscribed} />
+                <SignalCard key={event.id} event={event} isElite={isElite} />
               ))}
             </div>
           )}
@@ -291,7 +291,7 @@ export default function TraderCirclePage() {
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/50">{marketSignals.length}</span>
               </div>
               {marketSignals.map(event => (
-                <SignalCard key={event.id} event={event} isElite={isElite} isSubscribed={isSubscribed} />
+                <SignalCard key={event.id} event={event} isElite={isElite} />
               ))}
             </div>
           )}
