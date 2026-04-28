@@ -163,11 +163,11 @@ export default function PlansPage() {
                 <p className="text-sm text-white/40">{tier.description}</p>
               </div>
               
-               <Link href={tier.ctaHref}
+              <Link href={tier.ctaHref}
                 className={`block w-full rounded-xl py-3 text-center text-sm font-bold transition-colors mb-6 ${tier.ctaStyle}`}
               >
                 {tier.ctaLabel}
-              </a>
+              </Link>
               <div className="flex-1 space-y-2">
                 {tier.features.map((f) => (
                   <div key={f} className="flex items-start gap-2 text-sm">
