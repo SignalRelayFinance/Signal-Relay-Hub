@@ -80,7 +80,21 @@ export async function POST(req: Request) {
         ?.map((p: any) => `${p.pair}: ${p.direction} (strength ${p.strength}) — ${p.reason}`)
         .join('\n') ?? 'No pairs analysis available';
 
-      const prompt = `You are a senior forex and crypto trading analyst with 15 years of experience. A high-impact market signal has just dropped. 
+     // Count corroborating signals — same sentiment from other sources in last 24h
+      const { data: corroborating } = await supabase
+        .from('sf_events')
+        .select('id, sentiment, pairs_analysis')
+        .neq('id', event.id)
+        .eq('sentiment', event.sentiment ?? 'neutral')
+        .gte('fetched_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .not('pairs_analysis', 'is', null);
+
+      const corroboratingCount = corroborating?.length ?? 0;
+      const confidenceBoost = Math.min(corroboratingCount * 8, 30);
+      const baseConfidence = event.impact_score >= 4 ? 55 : 45;
+      const confidenceScore = Math.min(baseConfidence + confidenceBoost, 92);
+
+      const prompt = `You are a senior forex and crypto trading analyst with 15 years of experience. A high-impact market signal has just dropped. Generate a professional trade prediction using CURRENT live market prices.
 
 CRITICAL GUARDRAIL: You MUST base your entry_zone, target, and stop_loss EXACTLY around the current live market prices provided below. If you suggest a trade for a pair, the prices MUST reflect this live data. Do NOT use historical data.
 
@@ -101,19 +115,21 @@ Respond ONLY with valid JSON, no markdown, exactly in this structure:
 {
   "trades": [
     {
-      "pair": "XAUUSD",
+      "pair": "EURUSD",
       "direction": "long" | "short",
       "conviction": "high" | "medium" | "low",
-      "entry_zone": "MUST ALIGN WITH LIVE PRICE",
-      "target": "CALCULATED FROM LIVE PRICE",
-      "stop_loss": "CALCULATED FROM LIVE PRICE",
+      "entry_zone": "1.0820 - 1.0840",
+      "target": "1.0920",
+      "stop_loss": "1.0780",
       "timeframe": "4-12 hours",
-      "thesis": "Two to three sentence explanation.",
-      "key_risks": "One sentence describing the main risk."
+      "thesis": "Two to three sentence explanation of why this trade makes sense given the signal",
+      "key_risks": "One sentence describing the main risk to this trade"
     }
   ],
-  "market_summary": "Two to three sentence overall market context.",
-  "do_not_trade": "Any pairs to avoid trading right now and why."
+  "market_summary": "Two to three sentence overall market context and what traders should watch",
+  "do_not_trade": "Any pairs to avoid trading right now and why — one sentence",
+  "confidence_score": ${confidenceScore},
+  "corroborating_signals": ${corroboratingCount}
 }
 
 Maximum 3 trades. Only include high conviction setups.`;
@@ -141,6 +157,10 @@ Maximum 3 trades. Only include high conviction setups.`;
       } catch {
         continue;
       }
+
+      // Inject confidence score into prediction
+      prediction.confidence_score = confidenceScore;
+      prediction.corroborating_signals = corroboratingCount;
 
       await supabase
         .from('sf_events')
