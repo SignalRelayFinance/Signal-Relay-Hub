@@ -16,6 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </Link>
               <nav className="hidden md:flex items-center gap-4 text-sm text-white/80">
                 <Link className="hover:text-white" href="/feed">Live Feed</Link>
+                <Link className="hover:text-white" href="/traders-circle">Traders Circle</Link>
                 <Link className="hover:text-white" href="/markets">Markets</Link>
                 <Link className="hover:text-white" href="/digests">Digest Archive</Link>
                 <Link className="hover:text-white" href="/drip-queue">Social Drip Queue</Link>
