@@ -57,7 +57,7 @@ export async function POST(req: Request) {
 
   const { data: events } = await supabase
     .from('sf_events')
-    .select('id, title, summary, company, primary_tag, impact_score, pairs_analysis')
+    .select('id, title, summary, company, primary_tag, impact_score, sentiment, pairs_analysis')
     .gte('impact_score', 3)
     .is('trade_prediction', null)
     .not('pairs_analysis', 'is', null)
