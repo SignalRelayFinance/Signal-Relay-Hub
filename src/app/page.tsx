@@ -272,7 +272,7 @@ export default function LandingPage() {
             <Link className="text-sm text-white/70 hover:text-white transition-colors" href="/login">
               Sign in
             </Link>
-            <Link className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors" href="/login">
+            <Link className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors" href="/pricing">
               Get started free
             </Link>
           </nav>
@@ -293,7 +293,7 @@ export default function LandingPage() {
                 or pricing change hits, we push it to Telegram, email, and your API stack within minutes.
               </p>
               <div className="mt-8 flex flex-wrap justify-center sm:justify-start gap-4">
-                <Link href="/login" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
+                <Link href="/pricing" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
                   Start for free →
                 </Link>
                 <Link href="/feed" className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors">
