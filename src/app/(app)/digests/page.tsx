@@ -56,21 +56,14 @@ export default function DigestArchivePage() {
   }, []);
 
   useEffect(() => {
-    async function fetchDates() {
-      const res = await fetch('/api/events?limit=500');
-      if (!res.ok) return;
-      const data = await res.json();
-      const dates = new Set<string>();
-      for (const event of data.events ?? []) {
-        const raw = event.published_at ?? event.fetched_at;
-        if (raw) {
-          const d = new Date(raw);
-          if (!isNaN(d.getTime())) dates.add(toLocalDateStr(d));
-        }
-      }
-      setAvailableDates(Array.from(dates).sort((a, b) => b.localeCompare(a)));
+    // Generate last 30 days as available dates
+    const dates: string[] = [];
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dates.push(toLocalDateStr(d));
     }
-    fetchDates();
+    setAvailableDates(dates);
   }, []);
 
   useEffect(() => {
@@ -82,13 +75,7 @@ export default function DigestArchivePage() {
         const res = await fetch('/api/events?limit=500');
         if (!res.ok) return;
         const data = await res.json();
-        const filtered = (data.events ?? []).filter((e: DigestEvent) => {
-          const raw = e.published_at ?? e.fetched_at;
-          if (!raw) return false;
-          const d = new Date(raw);
-          return !isNaN(d.getTime()) && toLocalDateStr(d) === selectedDate;
-        });
-        setEvents(filtered);
+        setEvents(data.events ?? []);
       } finally {
         setLoading(false);
       }
