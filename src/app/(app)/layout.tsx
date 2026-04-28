@@ -43,6 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <span>© 2026 Signal Relay Hub</span>
                 <a href="/privacy" className="hover:text-white/70 transition-colors">Privacy Policy</a>
+                <a href="/disclaimer" className="hover:text-white/70 transition-colors">Risk Disclaimer</a>
                 <a href="/pricing" className="hover:text-white/70 transition-colors">Pricing</a>
                 <a href="https://t.me/signalrelayhub" target="_blank" rel="noreferrer" className="hover:text-white/70 transition-colors">Telegram</a>
                 <a href="https://discord.gg/4X9NGZuK" target="_blank" rel="noreferrer" className="hover:text-white/70 transition-colors">Discord</a>
