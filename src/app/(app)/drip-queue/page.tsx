@@ -76,7 +76,7 @@ export default async function SocialDripQueuePage() {
         <p className="text-xs uppercase tracking-[0.3em] text-white/50">Social Drip Queue</p>
         <h1 className="mt-3 text-3xl font-semibold">Schedule and broadcast your signals.</h1>
         <p className="mt-3 max-w-2xl text-sm text-white/70">
-          Queue signal posts to go out on X, Telegram, or email at a specific time. Every drip item is stored in Supabase and picked up automatically by your automation workers. Use this to stay consistent on social without manual posting.
+          Queue signal posts to go out on X, Telegram, or email at a specific time. Every drip item is stored in Supabase and picked up automatically by your automation workers.
         </p>
         <div className="mt-6 grid grid-cols-3 gap-4">
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
@@ -93,6 +93,150 @@ export default async function SocialDripQueuePage() {
             <div className="text-xs uppercase tracking-wide text-rose-300">Failed</div>
             <div className="mt-1 text-2xl font-bold text-white">{failed}</div>
             <p className="mt-0.5 text-xs text-white/50">Delivery errors</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Setup instructions */}
+      <section className="rounded-3xl border border-sky-400/20 bg-sky-400/5 p-6 text-white">
+        <div className="flex items-start gap-4">
+          <div className="h-8 w-8 rounded-full bg-sky-400/20 flex items-center justify-center shrink-0 mt-0.5">
+            <span className="text-sky-400 text-sm">📖</span>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-semibold text-white mb-1">How to set up your drip queue</h2>
+            <p className="text-sm text-white/50 mb-6">New here? Follow these steps to get your first automated post scheduled and firing.</p>
+
+            <div className="space-y-6">
+
+              {/* Step 1 */}
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="h-7 w-7 rounded-full bg-sky-400/20 border border-sky-400/30 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-sky-400">1</span>
+                  </div>
+                  <div className="w-px flex-1 bg-white/10" />
+                </div>
+                <div className="pb-6">
+                  <div className="text-sm font-semibold text-white mb-1">Connect your Telegram channel</div>
+                  <p className="text-sm text-white/50 leading-relaxed mb-3">
+                    The drip queue sends posts to your Telegram channel automatically. To connect it:
+                  </p>
+                  <ol className="space-y-2 text-sm text-white/50">
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span>Open Telegram and search for <span className="font-mono text-white/70">@BotFather</span></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span>Send <span className="font-mono text-white/70">/newbot</span> and follow the prompts to create your bot</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span>Copy your bot token — it looks like <span className="font-mono text-white/70">123456:ABC-DEF...</span></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span>Add your bot as an admin to your Telegram channel</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span>Get your channel chat ID by messaging <span className="font-mono text-white/70">@userinfobot</span> or using the Telegram API</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span>Save your chat ID in your <a href="/settings" className="text-sky-400 hover:text-sky-300 underline">Account settings</a></span>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="h-7 w-7 rounded-full bg-sky-400/20 border border-sky-400/30 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-sky-400">2</span>
+                  </div>
+                  <div className="w-px flex-1 bg-white/10" />
+                </div>
+                <div className="pb-6">
+                  <div className="text-sm font-semibold text-white mb-1">Schedule your first drip</div>
+                  <p className="text-sm text-white/50 leading-relaxed mb-3">
+                    Use the scheduler below to queue a post. Fill in:
+                  </p>
+                  <ol className="space-y-2 text-sm text-white/50">
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span><span className="text-white/70 font-medium">Channel</span> — pick Telegram, X, or Email</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span><span className="text-white/70 font-medium">Scheduled time</span> — pick the exact date and time to send</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-sky-400 shrink-0 mt-0.5">→</span>
+                      <span><span className="text-white/70 font-medium">Message</span> — write your signal post. Keep X posts under 280 characters</span>
+                    </li>
+                  </ol>
+                  <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                    <p className="text-xs text-white/40 leading-relaxed">
+                      💡 <span className="text-white/60">Tip:</span> Copy a signal from the Live Feed, add your analysis, and schedule it for market open (8am London time for forex).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="h-7 w-7 rounded-full bg-sky-400/20 border border-sky-400/30 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-sky-400">3</span>
+                  </div>
+                  <div className="w-px flex-1 bg-white/10" />
+                </div>
+                <div className="pb-6">
+                  <div className="text-sm font-semibold text-white mb-1">Set up your automation worker</div>
+                  <p className="text-sm text-white/50 leading-relaxed mb-3">
+                    The drip queue stores posts in Supabase. You need an automation tool to check the queue and send posts at the right time. Choose one:
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-3 mb-3">
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                      <div className="text-sm font-semibold text-white mb-1">Zapier</div>
+                      <p className="text-xs text-white/40 leading-relaxed">Use a scheduled Zap to poll your Supabase table every 15 mins and send queued posts via Telegram or email.</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                      <div className="text-sm font-semibold text-white mb-1">n8n</div>
+                      <p className="text-xs text-white/40 leading-relaxed">Self-hosted option. Set a cron trigger to query Supabase for queued items and fire them via Telegram node.</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                      <div className="text-sm font-semibold text-white mb-1">GitHub Actions</div>
+                      <p className="text-xs text-white/40 leading-relaxed">Free option. Set a cron workflow that hits your API endpoint every 15 mins to process the queue.</p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-2">
+                    <p className="text-xs text-amber-400/70 leading-relaxed">
+                      ⚠️ Without an automation worker, posts will stay in the queue as "queued" and never send automatically.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="h-7 w-7 rounded-full bg-emerald-400/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-emerald-400">4</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white mb-1">Monitor your queue</div>
+                  <p className="text-sm text-white/50 leading-relaxed">
+                    Once set up, come back here to check your queue status. Posts move from <span className="text-amber-400">queued</span> to <span className="text-emerald-400">sent</span> automatically. If something shows as <span className="text-rose-400">failed</span>, check your bot token and channel ID are correct in your account settings.
+                  </p>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </section>
