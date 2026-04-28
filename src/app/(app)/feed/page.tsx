@@ -301,6 +301,10 @@ export default function LiveFeedPage() {
   }, [activeTag, loadEvents]);
 
   useEffect(() => {
+    setPage(0);
+  }, [activeFilter, searchQuery]);
+
+  useEffect(() => {
     let mounted = true;
     (async () => {
       try {
