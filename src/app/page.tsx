@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import Link from 'next/link';
@@ -162,7 +163,7 @@ export default function PlansPage() {
                 <p className="text-sm text-white/40">{tier.description}</p>
               </div>
               
-                href={tier.ctaHref}
+               <Link href={tier.ctaHref}
                 className={`block w-full rounded-xl py-3 text-center text-sm font-bold transition-colors mb-6 ${tier.ctaStyle}`}
               >
                 {tier.ctaLabel}
