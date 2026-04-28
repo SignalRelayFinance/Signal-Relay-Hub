@@ -98,8 +98,22 @@ function SignalCard({ event, isElite }: { event: SignalEvent; isElite: boolean }
 
       {event.trade_prediction && (
         <div className={`mt-2 rounded border border-amber-500/20 bg-amber-500/5 p-2 relative overflow-hidden ${!isElite ? 'blur-sm' : ''}`}>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-amber-400/60 uppercase tracking-wide">⭐ Elite setup</span>
+            {event.trade_prediction.confidence_score && (
+              <div className="flex items-center gap-1">
+                <div className={`h-1.5 w-1.5 rounded-full ${event.trade_prediction.confidence_score >= 75 ? 'bg-emerald-400' : event.trade_prediction.confidence_score >= 55 ? 'bg-amber-400' : 'bg-rose-400'}`} />
+                <span className={`text-xs font-bold ${event.trade_prediction.confidence_score >= 75 ? 'text-emerald-400' : event.trade_prediction.confidence_score >= 55 ? 'text-amber-400' : 'text-rose-400'}`}>
+                  {event.trade_prediction.confidence_score}% conf
+                </span>
+                {event.trade_prediction.corroborating_signals > 0 && (
+                  <span className="text-xs text-white/20">· {event.trade_prediction.corroborating_signals} signals</span>
+                )}
+              </div>
+            )}
+          </div>
           {event.trade_prediction.trades?.slice(0, 1).map((t: any) => (
-            <div key={t.pair} className="flex items-center gap-2 text-xs">
+            <div key={t.pair} className="flex items-center gap-2 text-xs flex-wrap">
               <span className="font-mono font-bold text-white">{t.pair}</span>
               <span className={`font-bold ${t.direction === 'long' ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {t.direction === 'long' ? '▲ LONG' : '▼ SHORT'}
@@ -509,10 +523,13 @@ export default function TraderCirclePage() {
               <div className={`rounded-lg border p-2.5 ${userBadge === 'Elite' ? 'border-amber-400/30 bg-amber-400/5' : 'border-white/5 bg-white/3 opacity-40'}`}>
                 <div className="text-xs font-bold text-amber-400 mb-1">⭐ Elite</div>
                 <div className="text-xs text-white/50 space-y-0.5">
-                  <div>· AI trade predictions on every signal</div>
+                  <div>· AI trade predictions + confidence score</div>
+                  <div>· Signals 30min before Pro tier</div>
                   <div>· Daily AI briefing at 7am</div>
-                  <div>· Pre-event alerts 15min before news</div>
-                  <div>· AI Trading Assistant</div>
+                  <div>· Pre-event alerts + AI outcome prediction</div>
+                  <div>· Post-event AI debrief + updated setups</div>
+                  <div>· Weekly macro outlook every Sunday</div>
+                  <div>· AI Trading Assistant — scalp/swing/risk</div>
                   <div>· Elite badge in Traders Circle</div>
                 </div>
               </div>
