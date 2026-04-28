@@ -93,7 +93,7 @@ const tiers = [
       'Email digest delivery',
     ],
     cta: 'Get started — £45/mo',
-    ctaHref: '/login',
+    ctaHref: '/plans',
     ctaStyle: 'bg-white text-neutral-900 hover:bg-neutral-200',
   },
   {
@@ -118,7 +118,7 @@ const tiers = [
     ],
     locked: [],
     cta: 'Get Elite — £150/mo',
-    ctaHref: '/login',
+    ctaHref: '/plans',
     ctaStyle: 'bg-amber-400 text-neutral-900 hover:bg-amber-300',
   },
 ];
@@ -267,12 +267,12 @@ export default function LandingPage() {
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-10 sm:py-14">
 
         <header className="flex items-center justify-between">
-          <Link href="/feed" className="text-lg font-semibold hover:opacity-80 transition-opacity">Signal Relay Hub</Link>
+          <Link href="/" className="text-lg font-semibold hover:opacity-80 transition-opacity">Signal Relay Hub</Link>
           <nav className="flex items-center gap-3 text-sm text-neutral-300">
             <Link className="text-sm text-white/70 hover:text-white transition-colors" href="/login">
               Sign in
             </Link>
-            <Link className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors" href="/pricing">
+            <Link className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors" href="/plans">
               Get started free
             </Link>
           </nav>
@@ -293,7 +293,7 @@ export default function LandingPage() {
                 or pricing change hits, we push it to Telegram, email, and your API stack within minutes.
               </p>
               <div className="mt-8 flex flex-wrap justify-center sm:justify-start gap-4">
-                <Link href="/pricing" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
+                <Link href="/plans" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
                   Start for free →
                 </Link>
                 <Link href="/feed" className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors">
@@ -407,7 +407,7 @@ export default function LandingPage() {
               </table>
             </div>
             <div className="mt-6 flex justify-center">
-              <Link href="/login" className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
+              <Link href="/plans" className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 transition-colors">
                 Get started free
               </Link>
             </div>
