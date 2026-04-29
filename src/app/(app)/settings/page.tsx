@@ -21,7 +21,7 @@ export default async function AccountSettingsPage() {
   if (user?.email) {
     const { data } = await supabase
       .from('profiles')
-      .select('api_key, is_subscribed, is_elite, stripe_customer_id, telegram_chat_id, telegram_tags, referral_code, referral_count')
+      .select('api_key, is_subscribed, is_elite, stripe_customer_id, telegram_chat_id, telegram_tags, referral_code, referral_count, subscription_end_at')
       .eq('email', user.email)
       .single();
     profile = data;
@@ -71,6 +71,14 @@ export default async function AccountSettingsPage() {
           <div className={`text-xs uppercase tracking-wide font-semibold ${planLabel}`}>Current plan</div>
           <div className="mt-2 text-2xl font-bold text-white">{planName}</div>
           <p className="mt-1 text-sm text-white/60">{planDescription}</p>
+          {(profile?.is_subscribed || profile?.is_elite) && profile?.subscription_end_at && (
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-xs text-white/40">Renews</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-mono text-white/70">
+                {new Date(profile.subscription_end_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+          )}
           {profile?.is_elite && (
             <div className="mt-3 flex flex-wrap gap-2">
               {['AI trade predictions', 'Daily briefing', 'Priority alerts', 'Email digest', 'Unlimited API'].map((f) => (
