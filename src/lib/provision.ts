@@ -22,14 +22,18 @@ export async function provisionForCheckoutSession(input: {
   const supabase = getServiceClient();
   const apiKey = generateApiKey();
 
+  // Set subscription end date to 1 month from now on first provision
+  const subscriptionEndAt = new Date();
+  subscriptionEndAt.setMonth(subscriptionEndAt.getMonth() + 1);
+
   const updateData: Record<string, unknown> = {
     email: input.email,
     stripe_customer_id: input.stripeCustomerId ?? null,
     stripe_session_id: input.stripeSessionId,
     api_key: apiKey,
     is_subscribed: true,
+    subscription_end_at: subscriptionEndAt.toISOString(),
   };
-
   if (input.isElite) {
     updateData.is_elite = true;
   }
