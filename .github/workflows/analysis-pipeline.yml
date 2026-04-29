@@ -1,0 +1,40 @@
+name: Analysis Pipeline — Market Sessions
+
+on:
+  schedule:
+    # Asia/Tokyo open — 00:00 UTC (midnight)
+    - cron: '0 0 * * *'
+    # London open — 07:00 UTC
+    - cron: '0 7 * * 1-5'
+    # New York open — 13:00 UTC
+    - cron: '0 13 * * 1-5'
+    # London/NY overlap peak — 15:00 UTC
+    - cron: '0 15 * * 1-5'
+    # Sydney/Australia open — 22:00 UTC
+    - cron: '0 22 * * 0-4'
+  workflow_dispatch:
+
+jobs:
+  run-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run pairs analysis
+        env:
+          PROVISION_WEBHOOK_SECRET: ${{ secrets.PROVISION_WEBHOOK_SECRET }}
+        run: |
+          curl -s -X POST https://www.signalrelayhub.io/api/analysis/pairs \
+            -H "Content-Type: application/json" \
+            -H "x-provision-secret: $PROVISION_WEBHOOK_SECRET"
+          echo "Pairs analysis triggered"
+
+      - name: Wait for pairs analysis to complete
+        run: sleep 45
+
+      - name: Run trade predictions
+        env:
+          PROVISION_WEBHOOK_SECRET: ${{ secrets.PROVISION_WEBHOOK_SECRET }}
+        run: |
+          curl -s -X POST https://www.signalrelayhub.io/api/analysis/predict \
+            -H "Content-Type: application/json" \
+            -H "x-provision-secret: $PROVISION_WEBHOOK_SECRET"
+          echo "Trade predictions triggered"
