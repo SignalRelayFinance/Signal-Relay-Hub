@@ -3,7 +3,6 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function POST() {
-  // Check auth — only Pro/Elite can trigger scans
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +30,6 @@ export async function POST() {
     return NextResponse.json({ error: 'Pro or Elite required' }, { status: 403 });
   }
 
-  // Rate limit — max 1 scan per 30 minutes per user
   if (profile.last_scan_at) {
     const lastScan = new Date(profile.last_scan_at).getTime();
     const thirtyMins = 30 * 60 * 1000;
@@ -39,33 +37,30 @@ export async function POST() {
     if (Date.now() < nextScan) {
       const waitMins = Math.ceil((nextScan - Date.now()) / 60000);
       return NextResponse.json({
-        error: `Scan cooldown active. Next scan available in ${waitMins} minute${waitMins === 1 ? '' : 's'}.`,
+        error: `Scan cooldown active. Next scan in ${waitMins} minute${waitMins === 1 ? '' : 's'}.`,
         cooldown: true,
         next_scan_at: new Date(nextScan).toISOString(),
       }, { status: 429 });
     }
   }
 
-  // Update last_scan_at
   await supabase
     .from('profiles')
     .update({ last_scan_at: new Date().toISOString() })
     .eq('email', user.email);
 
-  const secret = process.env.PROVISION_WEBHOOK_SECRET;
-  const headers = {
-    'Content-Type': 'application/json',
-    'x-provision-secret': secret ?? '',
-  };
-
+  const secret = process.env.PROVISION_WEBHOOK_SECRET ?? '';
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.signalrelayhub.io';
+  const headers = { 'Content-Type': 'application/json', 'x-provision-secret': secret };
 
-  // Fire pairs analysis
-  await fetch(`${base}/api/analysis/pairs`, { method: 'POST', headers });
+  // Fire and forget — don't await, return immediately
+  void fetch(`${base}/api/analysis/pairs`, { method: 'POST', headers })
+    .then(() => fetch(`${base}/api/analysis/predict`, { method: 'POST', headers }))
+    .catch(() => {});
 
-  // Wait 20s then fire predictions
-  await new Promise(r => setTimeout(r, 20000));
-  await fetch(`${base}/api/analysis/predict`, { method: 'POST', headers });
-
-  return NextResponse.json({ ok: true, scanned_at: new Date().toISOString() });
+  return NextResponse.json({
+    ok: true,
+    scanned_at: new Date().toISOString(),
+    message: 'Scan triggered — check back in 60 seconds for updated signals.',
+  });
 }
