@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import type { SignalEvent, StatusPayload } from '@/lib/types';
 
 const TAGS = ['all', 'product', 'regulatory', 'funding', 'pricing', 'security', 'partnership', 'talent', 'insider_trading', 'ownership_change', 'merger_acquisition', 'management', 'earnings', 'general'];
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 200;
 
 const SIGNAL_FILTERS = [
   { key: 'all', label: 'All signals' },
@@ -139,11 +139,7 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
     ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
     : 'bg-white/5 text-white/50 border border-white/10';
 
-  const sentimentLabel = isPositive
-    ? '▲ Bullish'
-    : isNegative
-    ? '▼ Bearish'
-    : '— Neutral';
+  const sentimentLabel = isPositive ? '▲ Bullish' : isNegative ? '▼ Bearish' : '— Neutral';
 
   const impactLabel = event.impact_score >= 5 ? 'Critical'
     : event.impact_score >= 4 ? 'High'
@@ -279,6 +275,7 @@ function EventSkeleton() {
 
 export default function LiveFeedPage() {
   const [events, setEvents] = useState<SignalEvent[]>([]);
+  const [calendarData, setCalendarData] = useState<SignalEvent[]>([]);
   const [activeTag, setActiveTag] = useState('all');
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -306,6 +303,19 @@ export default function LiveFeedPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Fetch calendar events separately so they always show regardless of tag filter
+  useEffect(() => {
+    async function fetchCalendar() {
+      try {
+        const res = await fetch('/api/events?limit=50');
+        if (!res.ok) return;
+        const data = await res.json() as { events: SignalEvent[] };
+        setCalendarData((data.events ?? []).filter(e => e.company === 'Forex Factory'));
+      } catch { /* ignore */ }
+    }
+    fetchCalendar();
   }, []);
 
   useEffect(() => {
@@ -346,13 +356,16 @@ export default function LiveFeedPage() {
     loadEvents(activeTag, next, false);
   }
 
-  const calendarEvents = events.filter((e) => e.company === 'Forex Factory');
+  // Always use dedicated calendar fetch — falls back to events array if not loaded yet
+  const calendarEvents = calendarData.length > 0
+    ? calendarData
+    : events.filter((e) => e.company === 'Forex Factory');
+
   const allSignalEvents = events.filter((e) => e.company !== 'Forex Factory');
 
   const filteredSignalEvents = useMemo(() => {
     let filtered = allSignalEvents;
 
-    // Apply signal type filter
     if (activeFilter === 'trade_prediction') {
       filtered = filtered.filter(e => e.trade_prediction);
     } else if (activeFilter === 'pairs_analysis') {
@@ -367,7 +380,6 @@ export default function LiveFeedPage() {
       filtered = filtered.filter(e => ['regulatory', 'insider_trading', 'ownership_change', 'merger_acquisition', 'management', 'earnings'].includes(e.primary_tag));
     }
 
-    // Apply search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(e =>
