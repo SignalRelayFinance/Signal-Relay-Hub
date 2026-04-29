@@ -23,6 +23,19 @@ type PairSentiment = {
   bearish: number;
 };
 
+type MySignal = {
+  id: string;
+  pair: string;
+  direction: 'LONG' | 'SHORT';
+  entry: string;
+  target: string;
+  stop: string;
+  thesis: string;
+  source: string;
+  timestamp: Date;
+  confidence?: number;
+};
+
 const DEMO_MESSAGES: ChatMessage[] = [
   { id: 'sys1', user: 'System', message: 'Traders Circle is live. Share your setups, discuss signals and call your moves.', timestamp: new Date(Date.now() - 5 * 60000), badge: 'Elite', type: 'system' },
 ];
@@ -77,11 +90,9 @@ function SignalCard({ event, isElite }: { event: SignalEvent; isElite: boolean }
           </span>
         </div>
       </div>
-
       <a href={event.source_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-white hover:text-sky-300 leading-snug block">
         {event.title}
       </a>
-
       {event.pairs_analysis?.pairs && event.pairs_analysis.pairs.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {event.pairs_analysis.pairs.map((p: any) => (
@@ -91,7 +102,6 @@ function SignalCard({ event, isElite }: { event: SignalEvent; isElite: boolean }
           ))}
         </div>
       )}
-
       {event.trade_prediction && (
         <div className={`mt-2 rounded border border-amber-500/20 bg-amber-500/5 p-2 relative overflow-hidden ${!isElite ? 'blur-sm' : ''}`}>
           <div className="flex items-center justify-between mb-1.5">
@@ -102,9 +112,6 @@ function SignalCard({ event, isElite }: { event: SignalEvent; isElite: boolean }
                 <span className={`text-xs font-bold ${event.trade_prediction.confidence_score >= 75 ? 'text-emerald-400' : event.trade_prediction.confidence_score >= 55 ? 'text-amber-400' : 'text-rose-400'}`}>
                   {event.trade_prediction.confidence_score}% conf
                 </span>
-                {(event.trade_prediction.corroborating_signals ?? 0) > 0 && (
-                  <span className="text-xs text-white/20">· {event.trade_prediction.corroborating_signals} signals</span>
-                )}
               </div>
             )}
           </div>
@@ -128,27 +135,68 @@ function SignalCard({ event, isElite }: { event: SignalEvent; isElite: boolean }
   );
 }
 
+function MySignalCard({ signal, onRemove }: { signal: MySignal; onRemove: (id: string) => void }) {
+  return (
+    <div className={`rounded-xl border p-3 text-white ${signal.direction === 'LONG' ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-bold font-mono ${signal.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {signal.direction === 'LONG' ? '▲' : '▼'} {signal.pair}
+          </span>
+          <span className={`rounded px-1.5 py-0.5 text-xs font-bold ${signal.direction === 'LONG' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+            {signal.direction}
+          </span>
+          {signal.confidence && (
+            <span className={`text-xs font-bold ${signal.confidence >= 75 ? 'text-emerald-400' : signal.confidence >= 55 ? 'text-amber-400' : 'text-rose-400'}`}>
+              {signal.confidence}% conf
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/20 font-mono">{signal.timestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+          <button onClick={() => onRemove(signal.id)} className="text-white/20 hover:text-rose-400 transition-colors text-xs">✕</button>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 text-xs font-mono mb-2">
+        <span className="text-white/40">Entry <span className="text-white">{signal.entry}</span></span>
+        <span className="text-white/40">TP <span className="text-emerald-400">{signal.target}</span></span>
+        <span className="text-white/40">SL <span className="text-rose-400">{signal.stop}</span></span>
+      </div>
+      {signal.thesis && <p className="text-xs text-white/50 leading-relaxed">{signal.thesis}</p>}
+      <div className="mt-2 text-xs text-white/20 font-mono">via {signal.source}</div>
+    </div>
+  );
+}
+
 export default function TraderCirclePage() {
   const [events, setEvents] = useState<SignalEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [activePair, setActivePair] = useState('all');
   const [isElite, setIsElite] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const [userBadge, setUserBadge] = useState<'Elite' | 'Pro' | 'Free'>('Free');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
   const [chatInput, setChatInput] = useState('');
   const [sentiment, setSentiment] = useState<PairSentiment[]>(INITIAL_SENTIMENT);
   const [votedPairs, setVotedPairs] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'signals' | 'ideas' | 'chat'>('signals');
+  const [activeTab, setActiveTab] = useState<'signals' | 'ideas' | 'chat' | 'mine'>('signals');
   const [showTradeForm, setShowTradeForm] = useState(false);
   const [tradeForm, setTradeForm] = useState({ pair: 'XAUUSD', direction: 'LONG', entry: '', target: '', stop: '', thesis: '' });
+  const [mySignals, setMySignals] = useState<MySignal[]>([]);
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState<string | null>(null);
+  const [lastLoadDate, setLastLoadDate] = useState<string>('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch('/api/profile').then(r => r.json()).then(p => {
       setIsElite(p.is_elite ?? false);
+      setIsSubscribed(p.is_subscribed ?? false);
       setUserBadge(p.is_elite ? 'Elite' : p.is_subscribed ? 'Pro' : 'Free');
     }).catch(() => {});
   }, []);
+
+  const todayStr = () => new Date().toISOString().split('T')[0];
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -180,13 +228,61 @@ export default function TraderCirclePage() {
       }
 
       setEvents(Array.from(seen.values()));
+      setLastLoadDate(todayStr());
     } catch { /* ignore */ } finally {
       setLoading(false);
     }
   }, []);
 
+  // Auto-refresh if new day
+  useEffect(() => {
+    if (lastLoadDate && lastLoadDate !== todayStr()) {
+      setEvents([]);
+      setMySignals([]);
+      setScanMsg(null);
+      void loadEvents();
+    }
+  }, [lastLoadDate, loadEvents]);
+
+  // Check every minute if day has changed
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (lastLoadDate && lastLoadDate !== todayStr()) {
+        setEvents([]);
+        setMySignals([]);
+        setScanMsg(null);
+        void loadEvents();
+      }
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [lastLoadDate, loadEvents]);
+
   useEffect(() => { void loadEvents(); }, [loadEvents]);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
+
+  // Extract my signals from trade predictions in events
+  useEffect(() => {
+    if (!isElite && !isSubscribed) return;
+    const extracted: MySignal[] = [];
+    for (const event of events) {
+      if (!event.trade_prediction?.trades) continue;
+      for (const t of event.trade_prediction.trades) {
+        extracted.push({
+          id: `${event.id}-${t.pair}`,
+          pair: t.pair,
+          direction: t.direction === 'long' ? 'LONG' : 'SHORT',
+          entry: t.entry_zone,
+          target: t.target,
+          stop: t.stop_loss,
+          thesis: t.thesis,
+          source: event.company,
+          timestamp: new Date(event.fetched_at ?? Date.now()),
+          confidence: event.trade_prediction?.confidence_score,
+        });
+      }
+    }
+    setMySignals(extracted);
+  }, [events, isElite, isSubscribed]);
 
   const filteredEvents = useMemo(() => {
     if (activePair === 'all') return events;
@@ -195,6 +291,11 @@ export default function TraderCirclePage() {
 
   const eliteSignals = filteredEvents.filter(e => e.trade_prediction);
   const marketSignals = filteredEvents.filter(e => !e.trade_prediction);
+
+  const filteredMySignals = useMemo(() => {
+    if (activePair === 'all') return mySignals;
+    return mySignals.filter(s => s.pair === activePair);
+  }, [mySignals, activePair]);
 
   function vote(pair: string, direction: 'bullish' | 'bearish') {
     if (votedPairs.has(pair)) return;
@@ -238,7 +339,43 @@ export default function TraderCirclePage() {
     setActiveTab('chat');
   }
 
+  function removeMySignal(id: string) {
+    setMySignals(prev => prev.filter(s => s.id !== id));
+  }
+
+  async function triggerScan() {
+    if (scanning) return;
+    setScanning(true);
+    setScanMsg(null);
+    try {
+      const res = await fetch('/api/analysis/scan', { method: 'POST' });
+      const data = await res.json();
+      if (res.status === 429) {
+        setScanMsg(data.error);
+      } else if (res.ok) {
+        setScanMsg('Scanning... check back in 60 seconds.');
+        setTimeout(async () => {
+          await loadEvents();
+          setScanMsg('Signals refreshed ✓');
+        }, 60000);
+      } else {
+        setScanMsg(data.error ?? 'Scan failed.');
+      }
+    } catch {
+      setScanMsg('Scan failed — try again.');
+    } finally {
+      setScanning(false);
+    }
+  }
+
   const pairSentimentData = sentiment.find(s => s.pair === activePair);
+
+  const TABS = [
+    { key: 'signals', label: `Signals${filteredEvents.length > 0 ? ` (${filteredEvents.length})` : ''}` },
+    { key: 'mine', label: `My Signals${filteredMySignals.length > 0 ? ` (${filteredMySignals.length})` : ''}` },
+    { key: 'ideas', label: 'Trade Ideas' },
+    { key: 'chat', label: 'Discussion' },
+  ] as const;
 
   return (
     <div className="min-h-screen text-white">
@@ -255,6 +392,19 @@ export default function TraderCirclePage() {
           </div>
           <div className="flex items-center gap-2">
             <BadgePill badge={userBadge} />
+            {(isSubscribed || isElite) && (
+              <button
+                onClick={triggerScan}
+                disabled={scanning}
+                className="flex items-center gap-1.5 rounded-lg border border-sky-400/30 bg-sky-400/10 px-3 py-1.5 text-xs font-bold text-sky-300 hover:bg-sky-400/20 disabled:opacity-50 transition-colors"
+              >
+                {scanning ? (
+                  <><span className="h-2.5 w-2.5 rounded-full border-2 border-sky-400/40 border-t-sky-400 animate-spin" />Scanning...</>
+                ) : (
+                  <>🔍 Scan</>
+                )}
+              </button>
+            )}
             {userBadge !== 'Free' && (
               <button onClick={() => { setShowTradeForm(true); setActiveTab('ideas'); }}
                 className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-400/20 transition-colors">
@@ -263,6 +413,12 @@ export default function TraderCirclePage() {
             )}
           </div>
         </div>
+
+        {scanMsg && (
+          <div className="px-4 pb-2">
+            <span className="text-xs text-white/40 font-mono">{scanMsg}</span>
+          </div>
+        )}
 
         <div className="overflow-x-auto scrollbar-hide">
           <div className="flex gap-1 px-4 pb-2">
@@ -287,16 +443,17 @@ export default function TraderCirclePage() {
 
       <div className="grid lg:grid-cols-[1fr_380px] gap-0 min-h-[calc(100vh-120px)]">
         <div className="border-r border-white/10">
-          <div className="flex border-b border-white/10">
-            {(['signals', 'ideas', 'chat'] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors ${activeTab === tab ? 'border-b-2 border-white text-white' : 'text-white/30 hover:text-white/60'}`}>
-                {tab === 'signals' ? `Signals ${filteredEvents.length > 0 ? `(${filteredEvents.length})` : ''}` : tab === 'ideas' ? 'Trade Ideas' : 'Discussion'}
+          <div className="flex border-b border-white/10 overflow-x-auto">
+            {TABS.map(tab => (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                className={`flex-1 py-3 px-2 text-xs font-bold uppercase tracking-wide transition-colors whitespace-nowrap ${activeTab === tab.key ? 'border-b-2 border-white text-white' : 'text-white/30 hover:text-white/60'}`}>
+                {tab.label}
               </button>
             ))}
           </div>
 
           <div className="overflow-y-auto" style={{ height: 'calc(100vh - 200px)' }}>
+
             {activeTab === 'signals' && (
               <div className="p-3 space-y-2">
                 {eliteSignals.length > 0 && (
@@ -328,7 +485,60 @@ export default function TraderCirclePage() {
                 {!loading && filteredEvents.length === 0 && (
                   <div className="p-8 text-center">
                     <div className="text-white/30 text-sm mb-2">No market signals yet</div>
-                    <div className="text-white/20 text-xs">Signals appear here when high-impact events with market pair analysis are detected</div>
+                    <div className="text-white/20 text-xs mb-4">Signals appear here when high-impact events with market pair analysis are detected</div>
+                    {(isSubscribed || isElite) && (
+                      <button onClick={triggerScan} disabled={scanning}
+                        className="rounded-lg border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-xs font-bold text-sky-300 hover:bg-sky-400/20 transition-colors">
+                        🔍 Scan for signals now
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'mine' && (
+              <div className="p-3 space-y-3">
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5 mb-3">
+                  <p className="text-xs text-white/40 leading-relaxed">
+                    Your personal signal board — populated from AI trade predictions on today&apos;s events. Private to you, resets each day. Use the Scan button to get the latest setups.
+                  </p>
+                </div>
+
+                {(isSubscribed || isElite) ? (
+                  <>
+                    {filteredMySignals.length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 px-1">
+                          <span className="text-xs font-mono text-white/40 uppercase tracking-widest">Today&apos;s setups</span>
+                          <div className="flex-1 h-px bg-white/10" />
+                          <span className="text-xs text-white/30">{filteredMySignals.length}</span>
+                        </div>
+                        {filteredMySignals.map(signal => (
+                          <MySignalCard key={signal.id} signal={signal} onRemove={removeMySignal} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center">
+                        <div className="text-white/30 text-sm mb-2">No personal signals yet</div>
+                        <div className="text-white/20 text-xs mb-4">
+                          {isElite ? 'Scan for signals to generate AI trade setups for your session.' : 'Upgrade to Elite to get AI-generated trade setups.'}
+                        </div>
+                        {isElite && (
+                          <button onClick={triggerScan} disabled={scanning}
+                            className="rounded-lg border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-xs font-bold text-sky-300 hover:bg-sky-400/20 transition-colors">
+                            🔍 Scan for signals
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="p-8 text-center">
+                    <div className="text-white/30 text-sm mb-3">Pro or Elite required</div>
+                    <a href="/pricing" className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/50 hover:bg-white/10 transition-colors">
+                      Upgrade to access
+                    </a>
                   </div>
                 )}
               </div>
@@ -514,13 +724,13 @@ export default function TraderCirclePage() {
                 <div className="text-xs font-bold text-amber-400 mb-1">⭐ Elite</div>
                 <div className="text-xs text-white/50 space-y-0.5">
                   <div>· AI trade predictions + confidence score</div>
+                  <div>· Personal signal board (My Signals tab)</div>
                   <div>· Signals 30min before Pro tier</div>
                   <div>· Daily AI briefing at 7am</div>
                   <div>· Pre-event alerts + AI outcome prediction</div>
                   <div>· Post-event AI debrief + updated setups</div>
                   <div>· Weekly macro outlook every Sunday</div>
                   <div>· AI Trading Assistant — scalp/swing/risk</div>
-                  <div>· Elite badge in Traders Circle</div>
                 </div>
               </div>
               <div className={`rounded-lg border p-2.5 ${userBadge === 'Pro' || userBadge === 'Elite' ? 'border-sky-400/30 bg-sky-400/5' : 'border-white/5 bg-white/[0.03] opacity-40'}`}>
