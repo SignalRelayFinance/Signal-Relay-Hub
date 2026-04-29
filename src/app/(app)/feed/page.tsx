@@ -368,12 +368,14 @@ async function triggerScan() {
       if (res.status === 429) {
         setScanMsg(data.error);
         if (data.next_scan_at) setNextScanAt(new Date(data.next_scan_at));
-      } else if (res.ok) {
-        setScanMsg('Scan complete — refreshing signals...');
+     } else if (res.ok) {
         setNextScanAt(new Date(Date.now() + 30 * 60 * 1000));
-        // Reload events after scan
-        await loadEvents(activeTag, 0, true);
-        setScanMsg('Signals updated.');
+        setScanMsg('Scan triggered — refreshing in 60 seconds...');
+        // Wait 60 seconds then reload
+        setTimeout(async () => {
+          await loadEvents(activeTag, 0, true);
+          setScanMsg('Signals updated. ✓');
+        }, 60000);
       } else {
         setScanMsg(data.error ?? 'Scan failed.');
       }
