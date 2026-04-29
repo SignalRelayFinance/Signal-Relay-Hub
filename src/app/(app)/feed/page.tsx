@@ -286,6 +286,9 @@ export default function LiveFeedPage() {
   const [isElite, setIsElite] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState<string | null>(null);
+  const [nextScanAt, setNextScanAt] = useState<Date | null>(null);
 
   const loadEvents = useCallback(async (tag: string, pageNum: number, replace: boolean) => {
     setLoading(true);
@@ -355,6 +358,32 @@ export default function LiveFeedPage() {
     setPage(next);
     loadEvents(activeTag, next, false);
   }
+async function triggerScan() {
+    if (scanning) return;
+    setScanning(true);
+    setScanMsg(null);
+    try {
+      const res = await fetch('/api/analysis/scan', { method: 'POST' });
+      const data = await res.json();
+      if (res.status === 429) {
+        setScanMsg(data.error);
+        if (data.next_scan_at) setNextScanAt(new Date(data.next_scan_at));
+      } else if (res.ok) {
+        setScanMsg('Scan complete — refreshing signals...');
+        setNextScanAt(new Date(Date.now() + 30 * 60 * 1000));
+        // Reload events after scan
+        await loadEvents(activeTag, 0, true);
+        setScanMsg('Signals updated.');
+      } else {
+        setScanMsg(data.error ?? 'Scan failed.');
+      }
+    } catch {
+      setScanMsg('Scan failed — try again.');
+    } finally {
+      setScanning(false);
+    }
+  }
+  
 
   // Always use dedicated calendar fetch — falls back to events array if not loaded yet
   const calendarEvents = calendarData.length > 0
@@ -491,7 +520,7 @@ export default function LiveFeedPage() {
           </div>
         </div>
 
-        {status && (
+       {status && (
           <div className="mt-4 grid gap-3 text-sm text-white/80 md:grid-cols-3">
             <div className="rounded-2xl border border-emerald-300/40 bg-emerald-400/10 p-3">
               <div className="text-xs uppercase tracking-wide text-emerald-200">Flash SEC</div>
@@ -508,6 +537,36 @@ export default function LiveFeedPage() {
               <div className="mt-1 text-xl font-semibold text-white">{queuedDrips}</div>
               <p className="mt-0.5 text-xs text-white/70">Telegram {status.notifier.telegram}</p>
             </div>
+          </div>
+        )}
+
+        {(isSubscribed || isElite) && (
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              onClick={triggerScan}
+              disabled={scanning}
+              className="flex items-center gap-2 rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-2.5 text-sm font-semibold text-sky-300 hover:bg-sky-400/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {scanning ? (
+                <>
+                  <span className="h-3.5 w-3.5 rounded-full border-2 border-sky-400/40 border-t-sky-400 animate-spin" />
+                  Scanning for signals...
+                </>
+              ) : (
+                <>
+                  <span>🔍</span>
+                  Scan for new signals
+                </>
+              )}
+            </button>
+            {scanMsg && (
+              <span className="text-xs text-white/50">{scanMsg}</span>
+            )}
+            {nextScanAt && !scanning && (
+              <span className="text-xs text-white/30 font-mono">
+                Next scan {nextScanAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </div>
         )}
       </section>
