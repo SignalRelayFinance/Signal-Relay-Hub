@@ -24,20 +24,16 @@ type PairSentiment = {
 };
 
 const DEMO_MESSAGES: ChatMessage[] = [
-  { id: 'sys1', user: 'System', message: 'Traders Circle is live. Share setups, discuss signals, call moves.', timestamp: new Date(Date.now() - 15 * 60000), badge: 'Elite', type: 'system' },
-  { id: '1', user: 'TraderJoe', message: 'XAUUSD holding 4720 support hard. Fed signal earlier was the catalyst — watching for 4750 break.', timestamp: new Date(Date.now() - 12 * 60000), badge: 'Elite', pair: 'XAUUSD' },
-  { id: '2', user: 'FXHunter', message: 'EUR still under pressure after that ECB filing. Short bias intact below 1.178', timestamp: new Date(Date.now() - 8 * 60000), badge: 'Pro', pair: 'EURUSD' },
-  { id: '3', user: 'ScalpMaster', message: 'GBP setup looks clean for a short — BOE signal + claimant count miss', timestamp: new Date(Date.now() - 5 * 60000), badge: 'Elite', pair: 'GBPUSD', type: 'trade_idea', tradeIdea: { direction: 'SHORT', entry: '1.3520', target: '1.3460', stop: '1.3550' } },
-  { id: '4', user: 'CryptoKing', message: 'BTC holding 75k — retail sales data could be the catalyst for the next leg up', timestamp: new Date(Date.now() - 2 * 60000), badge: 'Pro', pair: 'BTCUSD' },
+  { id: 'sys1', user: 'System', message: 'Traders Circle is live. Share your setups, discuss signals and call your moves.', timestamp: new Date(Date.now() - 5 * 60000), badge: 'Elite', type: 'system' },
 ];
 
 const INITIAL_SENTIMENT: PairSentiment[] = [
-  { pair: 'XAUUSD', bullish: 72, bearish: 28 },
-  { pair: 'EURUSD', bullish: 35, bearish: 65 },
-  { pair: 'BTCUSD', bullish: 68, bearish: 32 },
-  { pair: 'GBPUSD', bullish: 30, bearish: 70 },
-  { pair: 'USOIL', bullish: 55, bearish: 45 },
-  { pair: 'US30', bullish: 60, bearish: 40 },
+  { pair: 'XAUUSD', bullish: 50, bearish: 50 },
+  { pair: 'EURUSD', bullish: 50, bearish: 50 },
+  { pair: 'BTCUSD', bullish: 50, bearish: 50 },
+  { pair: 'GBPUSD', bullish: 50, bearish: 50 },
+  { pair: 'USOIL', bullish: 50, bearish: 50 },
+  { pair: 'US30', bullish: 50, bearish: 50 },
 ];
 
 function BadgePill({ badge }: { badge: 'Elite' | 'Pro' | 'Free' }) {
@@ -154,35 +150,26 @@ export default function TraderCirclePage() {
     }).catch(() => {});
   }, []);
 
- const loadEvents = useCallback(async () => {
+  const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/events?limit=200');
       if (!res.ok) throw new Error('fetch failed');
       const data = await res.json() as { events: SignalEvent[] };
 
-      // Filter to only genuinely market-moving signals
       const marketEvents = (data.events ?? []).filter((e: SignalEvent) => {
         if (e.company === 'Forex Factory') return false;
         if (!e.pairs_analysis) return false;
-
-        // Filter out signals where ALL pairs are neutral — no real market impact
         const pairs = e.pairs_analysis?.pairs ?? [];
         const hasDirectionalPair = pairs.some((p: any) => p.direction === 'bullish' || p.direction === 'bearish');
         if (!hasDirectionalPair) return false;
-
-        // Filter out low value SEC form types
         const lowValueForms = ['497k', '497', 'n-14', 'n-2', 'n-csr', 's-11', 'ars', 'defa14a', 'def 14a'];
         const titleLower = (e.title ?? '').toLowerCase();
         if (lowValueForms.some(f => titleLower.includes(f))) return false;
-
-        // Must have impact score of at least 2
         if ((e.impact_score ?? 0) < 2) return false;
-
         return true;
       });
 
-      // Deduplicate by company — only show the highest impact signal per company per session
       const seen = new Map<string, SignalEvent>();
       for (const event of marketEvents) {
         const key = event.company;
@@ -211,7 +198,7 @@ export default function TraderCirclePage() {
 
   function vote(pair: string, direction: 'bullish' | 'bearish') {
     if (votedPairs.has(pair)) return;
-   setVotedPairs(prev => { const next = new Set(prev); next.add(pair); return next; });
+    setVotedPairs(prev => { const next = new Set(prev); next.add(pair); return next; });
     setSentiment(prev => prev.map(s => {
       if (s.pair !== pair) return s;
       const total = s.bullish + s.bearish + 1;
@@ -285,7 +272,7 @@ export default function TraderCirclePage() {
             </button>
             {PAIRS.map(pair => {
               const s = sentiment.find(x => x.pair === pair);
-              const bias = s ? (s.bullish > s.bearish ? 'bull' : 'bear') : null;
+              const bias = s ? (s.bullish > s.bearish ? 'bull' : s.bearish > s.bullish ? 'bear' : null) : null;
               return (
                 <button key={pair} onClick={() => setActivePair(pair)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-mono font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 ${activePair === pair ? 'bg-white text-neutral-900' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}>
@@ -339,7 +326,10 @@ export default function TraderCirclePage() {
                   </div>
                 ))}
                 {!loading && filteredEvents.length === 0 && (
-                  <div className="p-8 text-center text-white/30 text-sm">No market signals for {activePair === 'all' ? 'any pair' : activePair} yet</div>
+                  <div className="p-8 text-center">
+                    <div className="text-white/30 text-sm mb-2">No market signals yet</div>
+                    <div className="text-white/20 text-xs">Signals appear here when high-impact events with market pair analysis are detected</div>
+                  </div>
                 )}
               </div>
             )}
@@ -477,8 +467,8 @@ export default function TraderCirclePage() {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono font-bold text-white">{s.pair}</span>
-                        <span className={`text-xs font-bold ${s.bullish > s.bearish ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {s.bullish > s.bearish ? `▲ ${s.bullish}%` : `▼ ${s.bearish}%`}
+                        <span className={`text-xs font-bold ${s.bullish > s.bearish ? 'text-emerald-400' : s.bearish > s.bullish ? 'text-rose-400' : 'text-white/40'}`}>
+                          {s.bullish > s.bearish ? `▲ ${s.bullish}%` : s.bearish > s.bullish ? `▼ ${s.bearish}%` : `— 50%`}
                         </span>
                       </div>
                       {!voted ? (
@@ -520,7 +510,7 @@ export default function TraderCirclePage() {
           <div className="p-4 flex-1">
             <div className="text-xs font-mono uppercase tracking-widest text-white/40 mb-3">Membership perks</div>
             <div className="space-y-2">
-              <div className={`rounded-lg border p-2.5 ${userBadge === 'Elite' ? 'border-amber-400/30 bg-amber-400/5' : 'border-white/5 bg-white/3 opacity-40'}`}>
+              <div className={`rounded-lg border p-2.5 ${userBadge === 'Elite' ? 'border-amber-400/30 bg-amber-400/5' : 'border-white/5 bg-white/[0.03] opacity-40'}`}>
                 <div className="text-xs font-bold text-amber-400 mb-1">⭐ Elite</div>
                 <div className="text-xs text-white/50 space-y-0.5">
                   <div>· AI trade predictions + confidence score</div>
@@ -533,7 +523,7 @@ export default function TraderCirclePage() {
                   <div>· Elite badge in Traders Circle</div>
                 </div>
               </div>
-              <div className={`rounded-lg border p-2.5 ${userBadge === 'Pro' || userBadge === 'Elite' ? 'border-sky-400/30 bg-sky-400/5' : 'border-white/5 bg-white/3 opacity-40'}`}>
+              <div className={`rounded-lg border p-2.5 ${userBadge === 'Pro' || userBadge === 'Elite' ? 'border-sky-400/30 bg-sky-400/5' : 'border-white/5 bg-white/[0.03] opacity-40'}`}>
                 <div className="text-xs font-bold text-sky-400 mb-1">Pro</div>
                 <div className="text-xs text-white/50 space-y-0.5">
                   <div>· Full signal feed unlimited</div>
