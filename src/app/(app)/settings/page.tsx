@@ -1,42 +1,57 @@
 /* eslint-disable react/no-unescaped-entities */
-import React from 'react';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
 import TelegramTagSelector from '@/components/TelegramTagSelector';
 
-export default async function AccountSettingsPage() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
+export default function AccountSettingsPage() {
+  const [profile, setProfile] = useState<any>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() {},
-      },
-    }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-  const { data: { user } } = await supabase.auth.getUser();
-  let profile = null;
-  if (user?.email) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('api_key, is_subscribed, is_elite, stripe_customer_id, telegram_chat_id, telegram_tags, referral_code, referral_count, subscription_end_at')
-      .eq('email', user.email)
-      .single();
-    profile = data;
-  }
+
+  useEffect(() => {
+    async function loadData() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setUserEmail(user.email);
+        const { data } = await supabase
+          .from('profiles')
+          .select('api_key, is_subscribed, is_elite, stripe_customer_id, telegram_chat_id, telegram_tags, referral_code, referral_count, subscription_end_at')
+          .eq('email', user.email)
+          .single();
+        setProfile(data);
+      }
+      setLoading(false);
+    }
+    loadData();
+  }, [supabase]);
+
+  const copyToClipboard = () => {
+    if (!profile?.referral_code) return;
+    const link = `https://www.signalrelayhub.io/r/${profile.referral_code}`;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const automationBase = process.env.NEXT_PUBLIC_APP_URL ?? 'https://signalrelayhub.io';
 
- const plans: Record<string, { name: string; color: string; label: string; description: string }> = {
+  const plans: Record<string, { name: string; color: string; label: string; description: string }> = {
     elite: {
-      name: 'Elite - 150 per month',
+      name: 'Elite - £150 per month',
       color: 'border-amber-400/40 bg-amber-400/5',
       label: 'text-amber-300',
       description: 'Full Elite access - AI trade predictions, daily briefing, priority alerts.',
     },
     pro: {
-      name: 'Pro - 45 per month',
+      name: 'Pro - £45 per month',
       color: 'border-sky-400/40 bg-sky-400/5',
       label: 'text-sky-300',
       description: 'Pro access - Flash SEC alerts, Telegram, API key, pairs analysis.',
@@ -49,6 +64,8 @@ export default async function AccountSettingsPage() {
     },
   };
 
+  if (loading) return <div className="p-8 text-white/50">Loading profile...</div>;
+
   const tier = profile?.is_elite ? 'elite' : profile?.is_subscribed ? 'pro' : 'free';
   const planName = plans[tier].name;
   const planColor = plans[tier].color;
@@ -60,8 +77,8 @@ export default async function AccountSettingsPage() {
       <section className="rounded-3xl bg-neutral-950 p-8 text-white shadow-xl">
         <p className="text-xs uppercase tracking-[0.3em] text-white/50">Account</p>
         <h1 className="mt-3 text-3xl font-semibold">Manage your plan, API keys, and alerts.</h1>
-       <p className="mt-3 text-sm text-white/70">
-          {profile?.stripe_customer_id ? 'Welcome back' : 'Welcome to Signal Relay Hub'} — signed in as {user?.email ?? 'unknown user'}.
+        <p className="mt-3 text-sm text-white/70">
+          {profile?.stripe_customer_id ? 'Welcome back' : 'Welcome to Signal Relay Hub'} — signed in as {userEmail || 'unknown user'}.
         </p>
       </section>
 
@@ -123,7 +140,7 @@ export default async function AccountSettingsPage() {
           )}
         </div>
         
-  <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white">
           <div className="text-xs uppercase tracking-wide text-white/50">Referral programme</div>
           <div className="mt-2 text-xl font-semibold">Refer a friend — get 1 month free</div>
           <p className="mt-1 text-sm text-white/60">Share your referral link. When someone subscribes using your link you get one month free.</p>
@@ -133,7 +150,12 @@ export default async function AccountSettingsPage() {
                 <span className="font-mono text-sm text-white/80 truncate">
                   https://www.signalrelayhub.io/r/{profile.referral_code}
                 </span>
-                <span className="text-xs text-white/40 shrink-0">Copy link</span>
+                <button 
+                  onClick={copyToClipboard}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shrink-0 bg-white/10 text-white hover:bg-white/20"
+                >
+                  {copied ? 'Copied ✓' : 'Copy link'}
+                </button>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2">
@@ -177,7 +199,7 @@ export default async function AccountSettingsPage() {
             <div className="mt-4">
               <p className="text-sm text-white/60">Select which tags should fire Telegram alerts.</p>
               <div className="mt-4 rounded-2xl border border-white/10 p-3">
-                <TelegramTagSelector email={user?.email ?? ''} initialTags={profile.telegram_tags ?? ['product', 'regulatory', 'funding', 'pricing', 'security']} />
+                <TelegramTagSelector email={userEmail} initialTags={profile.telegram_tags ?? ['product', 'regulatory', 'funding', 'pricing', 'security']} />
               </div>
             </div>
           ) : (
@@ -187,7 +209,7 @@ export default async function AccountSettingsPage() {
                 <li>Open <a className="text-sky-400 hover:underline" href="https://t.me/signalrelayhub_bot" target="_blank" rel="noreferrer">@signalrelayhub_bot</a></li>
                 <li>Send the command below.</li>
               </ol>
-              <div className="rounded-xl bg-black/30 border border-white/10 p-2 font-mono text-xs text-white/70">/connect {user?.email}</div>
+              <div className="rounded-xl bg-black/30 border border-white/10 p-2 font-mono text-xs text-white/70">/connect {userEmail}</div>
               <p className="text-xs text-white/40">Refresh this page after sending the command.</p>
             </div>
           )}
