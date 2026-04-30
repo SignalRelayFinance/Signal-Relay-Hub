@@ -107,22 +107,22 @@ export function AppSidebar() {
         <SidebarContent />
       </aside>
 
-      {/* Mobile hamburger button */}
+      {/* Mobile hamburger button - FIX: Positioned and styled to align with AppTopBar */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed top-3 right-4 z-40 lg:hidden flex flex-col gap-1 p-2 rounded-lg bg-neutral-900 border border-white/10"
+        className="fixed top-2 right-4 z-40 lg:hidden flex flex-col gap-1.5 p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors backdrop-blur-md"
         aria-label="Open menu"
       >
-        <span className="block h-0.5 w-5 bg-white" />
-        <span className="block h-0.5 w-5 bg-white" />
-        <span className="block h-0.5 w-5 bg-white" />
+        <span className="block h-0.5 w-5 bg-white/80 rounded-full" />
+        <span className="block h-0.5 w-5 bg-white/80 rounded-full" />
+        <span className="block h-0.5 w-5 bg-white/80 rounded-full" />
       </button>
 
       {/* Mobile sidebar overlay */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-64">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-64 shadow-2xl">
             <SidebarContent onClose={() => setOpen(false)} />
           </div>
         </div>
