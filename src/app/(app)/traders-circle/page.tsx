@@ -168,6 +168,31 @@ function MySignalCard({ signal, onRemove }: { signal: MySignal; onRemove: (id: s
   );
 }
 
+// NEW SKELETON COMPONENT
+function SignalSkeleton() {
+  return (
+    <div className="rounded-xl border border-white/10 bg-neutral-900/80 p-3 animate-pulse">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-1.5">
+          <div className="h-3 w-12 bg-white/10 rounded"></div>
+          <div className="h-4 w-20 bg-white/10 rounded"></div>
+        </div>
+        <div className="flex gap-1">
+          <div className="h-3 w-16 bg-white/10 rounded"></div>
+        </div>
+      </div>
+      <div className="space-y-2 mt-3">
+        <div className="h-4 w-full bg-white/10 rounded"></div>
+        <div className="h-4 w-5/6 bg-white/10 rounded"></div>
+      </div>
+      <div className="mt-3 flex gap-1">
+        <div className="h-5 w-16 bg-white/10 rounded"></div>
+        <div className="h-5 w-16 bg-white/10 rounded"></div>
+      </div>
+    </div>
+  );
+}
+
 export default function TraderCirclePage() {
   const [events, setEvents] = useState<SignalEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -420,7 +445,8 @@ export default function TraderCirclePage() {
           </div>
         )}
 
-        <div className="overflow-x-auto scrollbar-hide">
+        {/* MOBILE AUDIT FIX: Hide scrollbar for pair tags */}
+        <div className="overflow-x-auto scrollbar-none hide-scrollbar">
           <div className="flex gap-1 px-4 pb-2">
             <button onClick={() => setActivePair('all')}
               className={`rounded-lg px-3 py-1.5 text-xs font-mono font-bold whitespace-nowrap transition-colors ${activePair === 'all' ? 'bg-white text-neutral-900' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}>
@@ -443,10 +469,11 @@ export default function TraderCirclePage() {
 
       <div className="grid lg:grid-cols-[1fr_380px] gap-0 min-h-[calc(100vh-120px)]">
         <div className="border-r border-white/10">
-          <div className="flex border-b border-white/10 overflow-x-auto">
+          {/* MOBILE AUDIT FIX: Smooth scroll on tab bar without wrapping */}
+          <div className="flex border-b border-white/10 overflow-x-auto scrollbar-none hide-scrollbar">
             {TABS.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 py-3 px-2 text-xs font-bold uppercase tracking-wide transition-colors whitespace-nowrap ${activeTab === tab.key ? 'border-b-2 border-white text-white' : 'text-white/30 hover:text-white/60'}`}>
+                className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wide transition-colors whitespace-nowrap ${activeTab === tab.key ? 'border-b-2 border-white text-white' : 'text-white/30 hover:text-white/60'}`}>
                 {tab.label}
               </button>
             ))}
@@ -476,12 +503,16 @@ export default function TraderCirclePage() {
                     {marketSignals.map(event => <SignalCard key={event.id} event={event} isElite={isElite} />)}
                   </div>
                 )}
-                {loading && [1,2,3].map(i => (
-                  <div key={i} className="rounded-xl border border-white/10 bg-neutral-900/80 p-3 animate-pulse">
-                    <div className="h-3 w-1/3 bg-white/10 rounded mb-2" />
-                    <div className="h-4 w-3/4 bg-white/10 rounded" />
+                
+                {/* PROPER ANIMATED SKELETON LOADERS APPLIED HERE */}
+                {loading && (
+                  <div className="space-y-2">
+                    <SignalSkeleton />
+                    <SignalSkeleton />
+                    <SignalSkeleton />
                   </div>
-                ))}
+                )}
+
                 {!loading && filteredEvents.length === 0 && (
                   <div className="p-8 text-center">
                     <div className="text-white/30 text-sm mb-2">No market signals yet</div>
