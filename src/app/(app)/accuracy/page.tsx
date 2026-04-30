@@ -37,7 +37,7 @@ export default function AccuracyTrackerPage() {
         </div>
         <h1 className="text-2xl lg:text-3xl font-semibold leading-tight">Signal Accuracy Tracker</h1>
         <p className="mt-2 text-sm text-white/70 max-w-2xl">
-          A fully transparent log of our AI's historical trade predictions. We track every setup against live market data to calculate our true win rate across all pairs.
+          A fully transparent log of our AI&apos;s historical trade predictions. We track every setup against live market data to calculate our true win rate across all pairs.
         </p>
       </section>
 
