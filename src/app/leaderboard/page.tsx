@@ -80,7 +80,7 @@ export default function LeaderboardPage() {
           </div>
 
           <div className="rounded-3xl border border-purple-500/20 bg-gradient-to-b from-purple-500/10 to-neutral-900 p-8 text-center sm:p-12">
-            <h2 className="text-2xl font-semibold text-white">Don't miss the next major catalyst.</h2>
+            <h2 className="text-2xl font-semibold text-white">Don&apos;t miss the next major catalyst.</h2>
             <p className="mt-2 text-white/60 max-w-xl mx-auto">
               Get notified the second one of these companies drops an SEC filing, product update, or pricing change. Filter the noise and only get alerts for the companies on your watchlist.
             </p>
