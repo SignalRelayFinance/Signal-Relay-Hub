@@ -43,7 +43,7 @@ export default function EconomicCalendarPage() {
 
           <div className="rounded-3xl border border-white/10 bg-white/5 overflow-hidden">
             <div className="border-b border-white/10 bg-black/40 px-6 py-4 flex items-center justify-between">
-              <h2 className="font-semibold text-white">Today's High-Impact Events</h2>
+              <h2 className="font-semibold text-white">Today&apos;s High-Impact Events</h2>
               <span className="text-xs font-mono text-white/50">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
             </div>
             
