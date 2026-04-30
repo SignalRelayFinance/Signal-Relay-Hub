@@ -35,8 +35,8 @@ const tiers = [
     labelColor: 'text-white/50',
     features: ['View live feed', 'Browse digest archive', 'Markets page with live prices', 'Economic calendar'],
     locked: ['Telegram push alerts', 'API access', 'Flash SEC filings', 'Market pair impact analysis', 'Trade direction predictions'],
-    cta: 'Sign in free',
-    ctaHref: '/login',
+    cta: 'Start for free',
+    ctaHref: '/plans',
     ctaStyle: 'border border-white/20 text-white hover:bg-white/10',
   },
   {
