@@ -1,22 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { SignalEvent, StatusPayload } from '@/lib/types';
 
 const TAGS = ['all', 'product', 'regulatory', 'funding', 'pricing', 'security', 'partnership', 'talent', 'insider_trading', 'ownership_change', 'merger_acquisition', 'management', 'earnings', 'general'];
-const PAGE_SIZE = 200;
-const PAIRS = ['XAUUSD', 'EURUSD', 'BTCUSD', 'GBPUSD', 'USOIL', 'US30', 'ETHUSD'];
+const PAGE_SIZE = 25;
 
-const SIGNAL_FILTERS = [
-  { key: 'all', label: 'All signals' },
-  { key: 'trade_prediction', label: 'Trade predictions', elite: true },
-  { key: 'pairs_analysis', label: 'Market analysis' },
-  { key: 'high_impact', label: 'High impact (4-5)' },
-  { key: 'bullish', label: 'Bullish' },
-  { key: 'bearish', label: 'Bearish' },
-  { key: 'sec', label: 'SEC filings' },
-];
+const sentimentColors: Record<string, string> = {
+  positive: 'text-emerald-300',
+  neutral: 'text-white/70',
+  negative: 'text-rose-300',
+};
 
 const impactColors: Record<string, string> = {
   High: 'bg-rose-500',
@@ -35,15 +30,21 @@ const SIGNAL_RESULTS = [
 function RotatingBanner() {
   const [current, setCurrent] = useState(0);
   const [fade, setFade] = useState(true);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setFade(false);
-      setTimeout(() => { setCurrent((prev) => (prev + 1) % SIGNAL_RESULTS.length); setFade(true); }, 300);
+      setTimeout(() => {
+        setCurrent((prev) => (prev + 1) % SIGNAL_RESULTS.length);
+        setFade(true);
+      }, 300);
     }, 3500);
     return () => clearInterval(timer);
   }, []);
+
   const result = SIGNAL_RESULTS[current];
   if (!result) return null;
+
   return (
     <div className={`p-3 transition-opacity duration-300 ${fade ? 'opacity-100' : 'opacity-0'}`}>
       <div className="flex items-center justify-between gap-3">
@@ -74,7 +75,9 @@ function CalendarCard({ event }: { event: SignalEvent }) {
   const forecast = (event as any).forecast as string | undefined;
   const actual = (event as any).actual_value as string | undefined;
   const previous = (event as any).previous_value as string | undefined;
-  let beat = false; let missed = false;
+
+  let beat = false;
+  let missed = false;
   if (actual && forecast) {
     try {
       const a = parseFloat(actual.replace(/[%KMB,]/g, ''));
@@ -82,6 +85,7 @@ function CalendarCard({ event }: { event: SignalEvent }) {
       if (!isNaN(a) && !isNaN(f)) { beat = a > f; missed = a < f; }
     } catch { /* ignore */ }
   }
+
   return (
     <div className={`rounded-xl border p-3 text-white ${actual ? (beat ? 'border-emerald-500/30 bg-emerald-500/10' : missed ? 'border-rose-500/30 bg-rose-500/10' : 'border-white/10 bg-white/5') : 'border-white/10 bg-white/5'}`}>
       <div className="flex items-center gap-2 mb-2">
@@ -91,12 +95,23 @@ function CalendarCard({ event }: { event: SignalEvent }) {
         </span>
         {currency && <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold text-white">{currency}</span>}
       </div>
-      <div className="text-sm font-medium text-white leading-snug mb-2">{event.title?.replace(/^[A-Z]{3}\s/, '')}</div>
+      <div className="text-sm font-medium text-white leading-snug mb-2">
+        {event.title?.replace(/^[A-Z]{3}\s/, '')}
+      </div>
       {(actual || forecast || previous) && (
         <div className="grid grid-cols-3 gap-1 text-xs border-t border-white/10 pt-2">
-          <div><div className="text-white/40 mb-0.5">Actual</div><div className={`font-bold ${beat ? 'text-emerald-400' : missed ? 'text-rose-400' : 'text-white/70'}`}>{actual || '—'}</div></div>
-          <div><div className="text-white/40 mb-0.5">Forecast</div><div className="text-white/70">{forecast || '—'}</div></div>
-          <div><div className="text-white/40 mb-0.5">Previous</div><div className="text-white/50">{previous || '—'}</div></div>
+          <div>
+            <div className="text-white/40 mb-0.5">Actual</div>
+            <div className={`font-bold ${beat ? 'text-emerald-400' : missed ? 'text-rose-400' : 'text-white/70'}`}>{actual || '—'}</div>
+          </div>
+          <div>
+            <div className="text-white/40 mb-0.5">Forecast</div>
+            <div className="text-white/70">{forecast || '—'}</div>
+          </div>
+          <div>
+            <div className="text-white/40 mb-0.5">Previous</div>
+            <div className="text-white/50">{previous || '—'}</div>
+          </div>
         </div>
       )}
     </div>
@@ -104,31 +119,25 @@ function CalendarCard({ event }: { event: SignalEvent }) {
 }
 
 function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }) {
-  const sentiment = event.sentiment;
-  const isPositive = sentiment === 'positive';
-  const isNegative = sentiment === 'negative';
-  const cardBorder = isPositive ? 'border-emerald-500/30 shadow-emerald-500/10 shadow-lg' : isNegative ? 'border-rose-500/30 shadow-rose-500/10 shadow-lg' : 'border-white/10';
-  const sentimentBadge = isPositive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : isNegative ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-white/5 text-white/50 border border-white/10';
-  const sentimentLabel = isPositive ? '▲ Bullish' : isNegative ? '▼ Bearish' : '— Neutral';
-  const impactLabel = event.impact_score >= 5 ? 'Critical' : event.impact_score >= 4 ? 'High' : event.impact_score >= 3 ? 'Moderate' : event.impact_score >= 2 ? 'Low' : 'Info';
-  const impactBadge = event.impact_score >= 4 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : event.impact_score >= 3 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-white/5 text-white/40 border border-white/10';
   return (
-    <div className={`rounded-2xl border bg-white/5 p-4 text-white transition-all ${cardBorder}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs mb-3">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-white/40">
-            {event.published_at && !event.published_at.includes('1970') ? new Date(event.published_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : new Date(event.fetched_at ?? '').toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-          </span>
-          <span className="rounded-full bg-white/10 px-2 py-0.5 font-medium text-white">{event.company}</span>
-          {event.primary_tag && <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-200">{event.primary_tag}</span>}
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-white/60">
+        <div className="font-mono text-xs">
+          {event.published_at && !event.published_at.includes('1970')
+            ? new Date(event.published_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+            : new Date(event.fetched_at ?? '').toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
         </div>
-        <div className="flex items-center gap-1.5">
-          {event.impact_score && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${impactBadge}`}>{impactLabel} impact</span>}
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${sentimentBadge}`}>{sentimentLabel}</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white">{event.company}</span>
+          {event.primary_tag && <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-200">{event.primary_tag}</span>}
+          {event.impact_score && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-200">Impact {event.impact_score}</span>}
+          <span className={`text-xs font-semibold ${sentimentColors[event.sentiment] ?? ''}`}>{event.sentiment}</span>
         </div>
       </div>
-      <div>
-        <a href={event.source_url} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-white hover:text-sky-200 leading-snug">{event.title}</a>
+      <div className="mt-2">
+        <a href={event.source_url} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-white hover:text-sky-200 leading-snug">
+          {event.title}
+        </a>
         {event.summary && <p className="mt-1.5 text-sm text-white/60 line-clamp-2">{event.summary}</p>}
       </div>
       {event.pairs_analysis && (
@@ -136,7 +145,7 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
           <div className="text-xs uppercase tracking-wide text-white/40 mb-1.5">Market impact</div>
           <div className="flex flex-wrap gap-1.5">
             {event.pairs_analysis.pairs?.map((p) => (
-              <div key={p.pair} className={`flex items-center gap-1 rounded-full border px-2.5 py-0.5 ${p.direction === 'bullish' ? 'border-emerald-500/20 bg-emerald-500/10' : p.direction === 'bearish' ? 'border-rose-500/20 bg-rose-500/10' : 'border-white/10 bg-white/5'}`}>
+              <div key={p.pair} className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
                 <span className="text-xs font-mono font-medium text-white">{p.pair}</span>
                 <span className={`text-xs font-bold ${p.direction === 'bullish' ? 'text-emerald-400' : p.direction === 'bearish' ? 'text-rose-400' : 'text-white/50'}`}>
                   {p.direction === 'bullish' ? '▲' : p.direction === 'bearish' ? '▼' : '—'}{'●'.repeat(p.strength)}
@@ -149,26 +158,15 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
       )}
       {event.trade_prediction && (
         <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs uppercase tracking-wide text-amber-400/70">Elite — Trade predictions</div>
-            {event.trade_prediction.confidence_score && (
-              <div className="flex items-center gap-1.5">
-                <div className={`h-1.5 w-1.5 rounded-full ${event.trade_prediction.confidence_score >= 75 ? 'bg-emerald-400' : event.trade_prediction.confidence_score >= 55 ? 'bg-amber-400' : 'bg-rose-400'}`} />
-                <span className={`text-xs font-bold ${event.trade_prediction.confidence_score >= 75 ? 'text-emerald-400' : event.trade_prediction.confidence_score >= 55 ? 'text-amber-400' : 'text-rose-400'}`}>
-                  {event.trade_prediction.confidence_score}% confidence
-                </span>
-                {(event.trade_prediction.corroborating_signals ?? 0) > 0 && (
-                  <span className="text-xs text-white/30">{event.trade_prediction.corroborating_signals} corroborating signals</span>
-                )}
-              </div>
-            )}
-          </div>
+          <div className="text-xs uppercase tracking-wide text-amber-400/70 mb-2">Elite — Trade predictions</div>
           <div className={isElite ? '' : 'blur-sm pointer-events-none select-none'}>
             {event.trade_prediction.trades?.map((t) => (
               <div key={t.pair} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-white/10">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="font-mono text-xs font-bold text-white">{t.pair}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.direction === 'long' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>{t.direction === 'long' ? 'LONG' : 'SHORT'}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.direction === 'long' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                    {t.direction === 'long' ? 'LONG' : 'SHORT'}
+                  </span>
                   <span className="rounded-full px-2 py-0.5 text-xs bg-amber-500/20 text-amber-400">{t.conviction} conviction</span>
                   <span className="text-xs text-white/40">{t.timeframe}</span>
                 </div>
@@ -180,13 +178,17 @@ function EventCard({ event, isElite }: { event: SignalEvent; isElite?: boolean }
                 <p className="text-xs text-white/60">{t.thesis}</p>
               </div>
             ))}
-            {event.trade_prediction.market_summary && <p className="text-xs text-white/50 border-t border-white/10 pt-2 mt-1">{event.trade_prediction.market_summary}</p>}
+            {event.trade_prediction.market_summary && (
+              <p className="text-xs text-white/50 border-t border-white/10 pt-2 mt-1">{event.trade_prediction.market_summary}</p>
+            )}
           </div>
           {!isElite && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/60 backdrop-blur-sm rounded-xl">
               <div className="text-xs uppercase tracking-wide text-amber-400 mb-1">Elite feature</div>
               <div className="text-sm font-semibold text-white mb-3">AI trade predictions are Elite only</div>
-              <a href="/pricing" className="rounded-full bg-amber-400 px-4 py-1.5 text-xs font-bold text-neutral-900 hover:bg-amber-300 transition-colors">Upgrade to Elite</a>
+              <a href="/pricing" className="rounded-full bg-amber-400 px-4 py-1.5 text-xs font-bold text-neutral-900 hover:bg-amber-300 transition-colors">
+                Upgrade to Elite
+              </a>
             </div>
           )}
         </div>
@@ -200,7 +202,10 @@ function EventSkeleton() {
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse">
       <div className="flex justify-between gap-2 mb-3">
         <div className="h-3 w-24 bg-white/10 rounded"></div>
-        <div className="flex gap-2"><div className="h-4 w-16 bg-white/10 rounded-full"></div><div className="h-4 w-20 bg-white/10 rounded-full"></div></div>
+        <div className="flex gap-2">
+          <div className="h-4 w-16 bg-white/10 rounded-full"></div>
+          <div className="h-4 w-20 bg-white/10 rounded-full"></div>
+        </div>
       </div>
       <div className="space-y-2 mt-4">
         <div className="h-5 w-3/4 bg-white/10 rounded"></div>
@@ -211,186 +216,9 @@ function EventSkeleton() {
   );
 }
 
-function PairSetupPanel({ events, isElite }: { events: SignalEvent[]; isElite: boolean }) {
-  const [selectedPair, setSelectedPair] = useState('XAUUSD');
-
-  const setups = useMemo(() => {
-    const results: Array<{
-      pair: string;
-      direction: string;
-      entry: string;
-      target: string;
-      stop: string;
-      conviction: string;
-      thesis: string;
-      confidence?: number;
-      source: string;
-      time: string;
-    }> = [];
-
-    for (const event of events) {
-      if (!event.trade_prediction?.trades) continue;
-      for (const t of event.trade_prediction.trades) {
-        if (t.pair === selectedPair) {
-          results.push({
-            pair: t.pair,
-            direction: t.direction === 'long' ? 'LONG' : 'SHORT',
-            entry: t.entry_zone,
-            target: t.target,
-            stop: t.stop_loss,
-            conviction: t.conviction,
-            thesis: t.thesis,
-            confidence: event.trade_prediction?.confidence_score,
-            source: event.company,
-            time: event.fetched_at ? new Date(event.fetched_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—',
-          });
-        }
-      }
-    }
-
-    // Also pull directional pairs_analysis signals for the selected pair
-    const pairSignals: Array<{
-      pair: string;
-      direction: string;
-      strength: number;
-      reason: string;
-      source: string;
-      time: string;
-      impact: number;
-    }> = [];
-
-    for (const event of events) {
-      if (!event.pairs_analysis?.pairs) continue;
-      for (const p of event.pairs_analysis.pairs) {
-        if (p.pair === selectedPair && p.direction !== 'neutral' && p.strength >= 2) {
-          pairSignals.push({
-            pair: p.pair,
-            direction: p.direction === 'bullish' ? 'BULLISH' : 'BEARISH',
-            strength: p.strength,
-            reason: p.reason,
-            source: event.company,
-            time: event.fetched_at ? new Date(event.fetched_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—',
-            impact: event.impact_score ?? 1,
-          });
-        }
-      }
-    }
-
-    return { setups: results, signals: pairSignals.sort((a, b) => b.impact - a.impact).slice(0, 5) };
-  }, [events, selectedPair]);
-
-  const overallBias = useMemo(() => {
-    const bullish = setups.signals.filter(s => s.direction === 'BULLISH').length;
-    const bearish = setups.signals.filter(s => s.direction === 'BEARISH').length;
-    if (bullish > bearish) return 'bullish';
-    if (bearish > bullish) return 'bearish';
-    return 'neutral';
-  }, [setups.signals]);
-
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white sticky top-6">
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-xs uppercase tracking-wide text-white/50">Today&apos;s setups</div>
-        {overallBias !== 'neutral' && (
-          <span className={`text-xs font-bold rounded px-1.5 py-0.5 ${overallBias === 'bullish' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-            {overallBias === 'bullish' ? '▲ Bullish bias' : '▼ Bearish bias'}
-          </span>
-        )}
-      </div>
-
-      {/* Pair selector */}
-      <div className="flex flex-wrap gap-1 mb-4">
-        {PAIRS.map(pair => (
-          <button
-            key={pair}
-            onClick={() => setSelectedPair(pair)}
-            className={`rounded-lg px-2 py-1 text-xs font-mono font-bold transition-colors ${selectedPair === pair ? 'bg-white text-neutral-900' : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'}`}
-          >
-            {pair}
-          </button>
-        ))}
-      </div>
-
-      {/* Trade setups */}
-      {isElite && setups.setups.length > 0 && (
-        <div className="space-y-3 mb-4">
-          <div className="text-xs font-mono uppercase tracking-widest text-amber-400/60 flex items-center gap-2">
-            <span>⭐ AI setups</span>
-            <div className="flex-1 h-px bg-amber-400/20" />
-          </div>
-          {setups.setups.map((s, i) => (
-            <div key={i} className={`rounded-xl border p-3 ${s.direction === 'LONG' ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-bold font-mono ${s.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {s.direction === 'LONG' ? '▲' : '▼'} {s.direction}
-                  </span>
-                  <span className="text-xs text-white/30 capitalize">{s.conviction}</span>
-                </div>
-                {s.confidence && (
-                  <span className={`text-xs font-bold ${s.confidence >= 75 ? 'text-emerald-400' : s.confidence >= 55 ? 'text-amber-400' : 'text-rose-400'}`}>
-                    {s.confidence}%
-                  </span>
-                )}
-              </div>
-              <div className="grid grid-cols-3 gap-1 text-xs font-mono mb-2">
-                <div><span className="text-white/30 block">Entry</span><span className="text-white">{s.entry}</span></div>
-                <div><span className="text-white/30 block">Target</span><span className="text-emerald-400">{s.target}</span></div>
-                <div><span className="text-white/30 block">Stop</span><span className="text-rose-400">{s.stop}</span></div>
-              </div>
-              <p className="text-xs text-white/40 leading-relaxed line-clamp-2">{s.thesis}</p>
-              <div className="mt-1.5 text-xs text-white/20 font-mono">{s.source} · {s.time}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!isElite && setups.setups.length > 0 && (
-        <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
-          <div className="text-xs text-amber-400/70 mb-1">⭐ {setups.setups.length} AI setup{setups.setups.length > 1 ? 's' : ''} available</div>
-          <a href="/pricing" className="text-xs text-amber-400 hover:text-amber-300">Upgrade to Elite to view →</a>
-        </div>
-      )}
-
-      {/* Directional signals */}
-      {setups.signals.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-xs font-mono uppercase tracking-widest text-white/30 flex items-center gap-2">
-            <span>Signals</span>
-            <div className="flex-1 h-px bg-white/10" />
-            <span>{setups.signals.length}</span>
-          </div>
-          {setups.signals.map((s, i) => (
-            <div key={i} className={`rounded-lg border px-2.5 py-2 ${s.direction === 'BULLISH' ? 'border-emerald-500/15 bg-emerald-500/5' : 'border-rose-500/15 bg-rose-500/5'}`}>
-              <div className="flex items-center justify-between mb-1">
-                <span className={`text-xs font-bold ${s.direction === 'BULLISH' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {s.direction === 'BULLISH' ? '▲' : '▼'} {'█'.repeat(s.strength)}
-                </span>
-                <span className="text-xs text-white/20 font-mono">{s.time}</span>
-              </div>
-              <p className="text-xs text-white/50 leading-relaxed line-clamp-2">{s.reason}</p>
-              <div className="mt-1 text-xs text-white/20 font-mono truncate">{s.source}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {setups.setups.length === 0 && setups.signals.length === 0 && (
-        <div className="py-6 text-center">
-          <div className="text-white/20 text-xs mb-1">No setups for {selectedPair} yet</div>
-          <div className="text-white/15 text-xs">Run a scan to generate setups</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function LiveFeedPage() {
   const [events, setEvents] = useState<SignalEvent[]>([]);
-  const [calendarData, setCalendarData] = useState<SignalEvent[]>([]);
   const [activeTag, setActiveTag] = useState('all');
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -398,10 +226,6 @@ export default function LiveFeedPage() {
   const [isElite, setIsElite] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [scanMsg, setScanMsg] = useState<string | null>(null);
-  const [nextScanAt, setNextScanAt] = useState<Date | null>(null);
-  const [sidebarTab, setSidebarTab] = useState<'calendar' | 'setups'>('setups');
 
   const loadEvents = useCallback(async (tag: string, pageNum: number, replace: boolean) => {
     setLoading(true);
@@ -414,93 +238,54 @@ export default function LiveFeedPage() {
       const newEvents = data.events ?? [];
       setEvents(prev => replace ? newEvents : [...prev, ...newEvents]);
       setHasMore(newEvents.length === PAGE_SIZE);
-    } catch { } finally {
+    } catch {
+      // ignore
+    } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    async function fetchCalendar() {
-      try {
-        const res = await fetch('/api/events?limit=50');
-        if (!res.ok) return;
-        const data = await res.json() as { events: SignalEvent[] };
-        setCalendarData((data.events ?? []).filter(e => e.company === 'Forex Factory'));
-      } catch { }
-    }
-    fetchCalendar();
-  }, []);
-
-  useEffect(() => { setPage(0); loadEvents(activeTag, 0, true); }, [activeTag, loadEvents]);
-  useEffect(() => { setPage(0); }, [activeFilter, searchQuery]);
+    setPage(0);
+    loadEvents(activeTag, 0, true);
+  }, [activeTag, loadEvents]);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const [statusRes, profileRes] = await Promise.all([fetch('/api/status'), fetch('/api/profile')]);
-        if (statusRes.ok && mounted) setStatus(await statusRes.json() as StatusPayload);
+        const [statusRes, profileRes] = await Promise.all([
+          fetch('/api/status'),
+          fetch('/api/profile'),
+        ]);
+        if (statusRes.ok && mounted) {
+          const data = await statusRes.json();
+          setStatus(data as StatusPayload);
+        }
         if (profileRes.ok && mounted) {
           const profile = await profileRes.json();
           setIsElite(profile.is_elite ?? false);
           setIsSubscribed(profile.is_subscribed ?? false);
           setProfileLoaded(true);
         }
-      } catch { }
+      } catch { /* ignore */ }
     })();
     return () => { mounted = false; };
   }, []);
 
-  function loadMore() { const next = page + 1; setPage(next); loadEvents(activeTag, next, false); }
-
-  async function triggerScan() {
-    if (scanning) return;
-    setScanning(true);
-    setScanMsg(null);
-    try {
-      const res = await fetch('/api/analysis/scan', { method: 'POST' });
-      const data = await res.json();
-      if (res.status === 429) {
-        setScanMsg(data.error);
-        if (data.next_scan_at) setNextScanAt(new Date(data.next_scan_at));
-      } else if (res.ok) {
-        setNextScanAt(new Date(Date.now() + 30 * 60 * 1000));
-        setScanMsg('Scan triggered — refreshing in 60 seconds...');
-        setSidebarTab('setups');
-        setTimeout(async () => { await loadEvents(activeTag, 0, true); setScanMsg('Signals updated. ✓'); }, 60000);
-      } else {
-        setScanMsg(data.error ?? 'Scan failed.');
-      }
-    } catch {
-      setScanMsg('Scan failed — try again.');
-    } finally {
-      setScanning(false);
-    }
+  function loadMore() {
+    const next = page + 1;
+    setPage(next);
+    loadEvents(activeTag, next, false);
   }
 
-  const calendarEvents = calendarData.length > 0 ? calendarData : events.filter((e) => e.company === 'Forex Factory');
+  const calendarEvents = events.filter((e) => e.company === 'Forex Factory');
   const allSignalEvents = events.filter((e) => e.company !== 'Forex Factory');
-
-  const filteredSignalEvents = useMemo(() => {
-    let filtered = allSignalEvents;
-    if (activeFilter === 'trade_prediction') filtered = filtered.filter(e => e.trade_prediction);
-    else if (activeFilter === 'pairs_analysis') filtered = filtered.filter(e => e.pairs_analysis);
-    else if (activeFilter === 'high_impact') filtered = filtered.filter(e => (e.impact_score ?? 0) >= 4);
-    else if (activeFilter === 'bullish') filtered = filtered.filter(e => e.sentiment === 'positive');
-    else if (activeFilter === 'bearish') filtered = filtered.filter(e => e.sentiment === 'negative');
-    else if (activeFilter === 'sec') filtered = filtered.filter(e => ['regulatory', 'insider_trading', 'ownership_change', 'merger_acquisition', 'management', 'earnings'].includes(e.primary_tag));
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(e => e.title?.toLowerCase().includes(q) || e.company?.toLowerCase().includes(q) || e.summary?.toLowerCase().includes(q) || e.primary_tag?.toLowerCase().includes(q));
-    }
-    return filtered;
-  }, [allSignalEvents, activeFilter, searchQuery]);
-
   const FREE_LIMIT = 5;
-  const signalEvents = isSubscribed ? filteredSignalEvents : filteredSignalEvents.slice(0, FREE_LIMIT);
-  const isGated = !isSubscribed && filteredSignalEvents.length > FREE_LIMIT;
-  const regulatoryCount = filteredSignalEvents.filter((e) => e.primary_tag === 'regulatory').length;
-  const avgImpact = filteredSignalEvents.length ? (filteredSignalEvents.reduce((sum, e) => sum + (e.impact_score ?? 0), 0) / filteredSignalEvents.length).toFixed(1) : '—';
+  const signalEvents = isSubscribed ? allSignalEvents : allSignalEvents.slice(0, FREE_LIMIT);
+  const isGated = !isSubscribed && allSignalEvents.length > FREE_LIMIT;
+  const regulatoryCount = signalEvents.filter((e) => e.primary_tag === 'regulatory').length;
+  const avgImpact = signalEvents.length ? (signalEvents.reduce((sum, e) => sum + (e.impact_score ?? 0), 0) / signalEvents.length).toFixed(1) : '—';
   const flashStatus = status?.collectors?.flash_sec;
   const foundryStatus = status?.collectors?.signal_foundry;
   const queuedDrips = status?.notifier?.queued_drips ?? 0;
@@ -524,8 +309,8 @@ export default function LiveFeedPage() {
           <div className="grid flex-1 gap-3 text-sm text-white/80 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
               <div className="text-xs uppercase tracking-wide text-white/60">Signals</div>
-              <div className="mt-1 text-2xl font-semibold">{filteredSignalEvents.length || '—'}</div>
-              <p className="mt-0.5 text-xs text-white/60">Matching filters</p>
+              <div className="mt-1 text-2xl font-semibold">{signalEvents.length || '—'}</div>
+              <p className="mt-0.5 text-xs text-white/60">This page</p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
               <div className="text-xs uppercase tracking-wide text-white/60">Regulatory</div>
@@ -539,35 +324,24 @@ export default function LiveFeedPage() {
             </div>
           </div>
         </div>
-
-        <div className="mt-4 space-y-3">
-          <div className="relative">
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search signals by company, keyword or tag..." className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/30 pr-10" />
-            {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-xs">✕</button>}
-          </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
-            <div className="text-xs uppercase tracking-[0.3em] text-white/50 mb-2">Signal type</div>
-            <div className="flex flex-wrap gap-1.5">
-              {SIGNAL_FILTERS.map((filter) => {
-                const isLocked = filter.elite && !isElite;
-                return (
-                  <button key={filter.key} onClick={() => !isLocked && setActiveFilter(filter.key)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors flex items-center gap-1 ${activeFilter === filter.key ? 'bg-white text-neutral-900' : isLocked ? 'bg-white/5 text-white/20 cursor-not-allowed' : 'bg-white/10 text-white hover:bg-white/20'}`}>
-                    {filter.elite && <span className="text-amber-400">⭐</span>}
-                    {isLocked && <span>🔒</span>}
-                    {filter.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
-            <div className="text-xs uppercase tracking-[0.3em] text-white/50 mb-2">Filter by tag</div>
-            <div className="flex flex-wrap gap-1.5">
-              {TAGS.map((tag) => (
-                <button key={tag} onClick={() => setActiveTag(tag)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${activeTag === tag ? 'bg-white text-neutral-900' : 'bg-white/10 text-white hover:bg-white/20'}`}>{tag}</button>
-              ))}
-            </div>
+        
+        {/* MOBILE AUDIT FIX: Horizontally scrollable tag filter */}
+        <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3 overflow-hidden">
+          <div className="text-xs uppercase tracking-[0.3em] text-white/50 mb-2">Filter by tag</div>
+          <div className="flex overflow-x-auto gap-2 pb-1 pr-4 -mr-3 scrollbar-none hide-scrollbar">
+            {TAGS.map((tag) => (
+              <button 
+                key={tag} 
+                onClick={() => setActiveTag(tag)} 
+                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                  activeTag === tag 
+                    ? 'bg-white text-neutral-900 shadow-sm' 
+                    : 'bg-white/10 text-white hover:bg-white/20'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -590,30 +364,22 @@ export default function LiveFeedPage() {
             </div>
           </div>
         )}
-
-        {(isSubscribed || isElite) && (
-          <div className="mt-4 flex items-center gap-3">
-            <button onClick={triggerScan} disabled={scanning}
-              className="flex items-center gap-2 rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-2.5 text-sm font-semibold text-sky-300 hover:bg-sky-400/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-              {scanning ? (<><span className="h-3.5 w-3.5 rounded-full border-2 border-sky-400/40 border-t-sky-400 animate-spin" />Scanning...</>) : (<><span>🔍</span>Scan for new signals</>)}
-            </button>
-            {scanMsg && <span className="text-xs text-white/50">{scanMsg}</span>}
-            {nextScanAt && !scanning && <span className="text-xs text-white/30 font-mono">Next scan {nextScanAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>}
-          </div>
-        )}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <section className="space-y-3">
           {signalEvents.length === 0 && !loading ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-              <div className="text-white/50 text-sm mb-2">No signals match your filters</div>
-              <button onClick={() => { setActiveTag('all'); setActiveFilter('all'); setSearchQuery(''); }} className="text-xs text-sky-400 hover:text-sky-300">Clear all filters</button>
-            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-white/50">No signals found{activeTag !== 'all' ? ` for tag: ${activeTag}` : ''}.</div>
           ) : (
             signalEvents.map((event) => <EventCard key={event.id} event={event} isElite={isElite} />)
           )}
-          {loading && (<div className="space-y-3"><EventSkeleton /><EventSkeleton /><EventSkeleton /></div>)}
+          {loading && (
+            <div className="space-y-3">
+              <EventSkeleton />
+              <EventSkeleton />
+              <EventSkeleton />
+            </div>
+          )}
           {isGated && profileLoaded && (
             <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
               <div className="blur-sm pointer-events-none select-none p-4 space-y-3">
@@ -625,17 +391,35 @@ export default function LiveFeedPage() {
                       {event.impact_score && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-200">Impact {event.impact_score}</span>}
                     </div>
                     <div className="text-sm font-medium text-white">{event.title}</div>
+                    {event.pairs_analysis && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {event.pairs_analysis.pairs?.slice(0, 3).map((p) => (
+                          <span key={p.pair} className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-white/60">
+                            {p.pair} {p.direction === 'bullish' ? 'up' : 'down'}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
               <div className="relative -mt-32 pb-6 px-6 flex flex-col items-center text-center bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent pt-20">
                 <div className="text-xs uppercase tracking-wide text-white/50 mb-2">Free plan limit reached</div>
-                <h3 className="text-lg font-semibold text-white mb-1">{filteredSignalEvents.length - FREE_LIMIT} more signals available today</h3>
+                <h3 className="text-lg font-semibold text-white mb-1">{allSignalEvents.length - FREE_LIMIT} more signals available today</h3>
                 <p className="text-sm text-white/60 mb-3 max-w-sm">Pro members are seeing live SEC alerts, AI market analysis and trade setups for these signals right now.</p>
                 <div className="grid grid-cols-3 gap-3 mb-4 w-full max-w-sm">
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-center"><div className="text-lg font-bold text-emerald-400">73%</div><div className="text-xs text-white/50 mt-0.5">Signal accuracy</div></div>
-                  <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-center"><div className="text-lg font-bold text-sky-400">4 min</div><div className="text-xs text-white/50 mt-0.5">Avg alert speed</div></div>
-                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-center"><div className="text-lg font-bold text-amber-400">28+</div><div className="text-xs text-white/50 mt-0.5">Live sources</div></div>
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-center">
+                    <div className="text-lg font-bold text-emerald-400">73%</div>
+                    <div className="text-xs text-white/50 mt-0.5">Signal accuracy</div>
+                  </div>
+                  <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-center">
+                    <div className="text-lg font-bold text-sky-400">4 min</div>
+                    <div className="text-xs text-white/50 mt-0.5">Avg alert speed</div>
+                  </div>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-center">
+                    <div className="text-lg font-bold text-amber-400">28+</div>
+                    <div className="text-xs text-white/50 mt-0.5">Live sources</div>
+                  </div>
                 </div>
                 <div className="w-full max-w-sm mb-4">
                   <div className="text-xs uppercase tracking-wide text-white/40 mb-2 text-left">Live signal results</div>
@@ -647,55 +431,51 @@ export default function LiveFeedPage() {
                     <RotatingBanner />
                   </div>
                 </div>
+                <div className="flex flex-wrap justify-center gap-2 mb-4">
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">Flash SEC alerts</div>
+                  <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-300">Telegram push alerts</div>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300">AI trade predictions</div>
+                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-1.5 text-xs text-purple-300">Market pair analysis</div>
+                </div>
                 <div className="flex gap-3">
-                  <a href="/pricing" className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">Upgrade to Pro</a>
-                  <a href="/pricing" className="rounded-full border border-amber-400/40 bg-amber-400/10 px-5 py-2 text-sm font-medium text-amber-300 hover:bg-amber-400/20 transition-colors">Get Elite</a>
+                  <a href="/pricing" className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors">
+                    Upgrade to Pro
+                  </a>
+                  <a href="/pricing" className="rounded-full border border-amber-400/40 bg-amber-400/10 px-5 py-2 text-sm font-medium text-amber-300 hover:bg-amber-400/20 transition-colors">
+                    Get Elite
+                  </a>
                 </div>
               </div>
             </div>
           )}
           {!isGated && hasMore && !loading && signalEvents.length > 0 && (
             <div className="flex justify-center pt-2">
-              <button onClick={loadMore} className="rounded-full border border-white/20 px-6 py-2 text-sm font-medium text-white/70 hover:bg-white/10">Load more signals</button>
+              <button onClick={loadMore} className="rounded-full border border-white/20 px-6 py-2 text-sm font-medium text-white/70 hover:bg-white/10">
+                Load more signals
+              </button>
             </div>
           )}
         </section>
 
         <aside className="space-y-3">
-          {/* Sidebar tab switcher */}
-          <div className="flex rounded-xl border border-white/10 overflow-hidden">
-            <button onClick={() => setSidebarTab('setups')}
-              className={`flex-1 py-2 text-xs font-bold transition-colors ${sidebarTab === 'setups' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}>
-              Pair Setups
-            </button>
-            <button onClick={() => setSidebarTab('calendar')}
-              className={`flex-1 py-2 text-xs font-bold transition-colors ${sidebarTab === 'calendar' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}>
-              Calendar
-            </button>
-          </div>
-
-          {sidebarTab === 'setups' && (
-            <PairSetupPanel events={allSignalEvents} isElite={isElite} />
-          )}
-
-          {sidebarTab === 'calendar' && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white sticky top-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-xs uppercase tracking-wide text-white/50">Economic calendar</div>
-                <div className="flex items-center gap-2 text-xs text-white/40">
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" /> High</span>
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Med</span>
-                </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white sticky top-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs uppercase tracking-wide text-white/50">Economic calendar</div>
+              <div className="flex items-center gap-2 text-xs text-white/40">
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" /> High</span>
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Med</span>
               </div>
-              {todayCalendar.length === 0 ? (
-                <div className="text-xs text-white/40 py-4 text-center">No upcoming events</div>
-              ) : (
-                <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto pr-1">
-                  {todayCalendar.map((event) => <CalendarCard key={event.id} event={event} />)}
-                </div>
-              )}
             </div>
-          )}
+            {todayCalendar.length === 0 ? (
+              <div className="text-xs text-white/40 py-4 text-center">No upcoming events</div>
+            ) : (
+              <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto pr-1">
+                {todayCalendar.map((event) => (
+                  <CalendarCard key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+          </div>
         </aside>
       </div>
     </div>
