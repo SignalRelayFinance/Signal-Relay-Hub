@@ -29,25 +29,11 @@ const CATEGORY_PAIRS: Record<string, string[]> = {
   commodities: ['USOIL'],
 };
 
-function getImpactLabel(score: number): string {
-  if (score >= 5) return 'Critical — immediate market reaction likely';
-  if (score >= 4) return 'High — significant market relevance';
-  if (score >= 3) return 'Moderate — watch for follow-through';
-  if (score >= 2) return 'Low — minor market relevance';
-  return 'Informational only';
-}
-
 function getImpactColor(score: number): string {
   if (score >= 5) return 'border-rose-500/30 bg-rose-500/10 text-rose-300';
   if (score >= 4) return 'border-amber-500/30 bg-amber-500/10 text-amber-300';
   if (score >= 3) return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300';
   return 'border-white/10 bg-white/5 text-white/40';
-}
-
-function getSentimentLabel(sentiment: string): string {
-  if (sentiment === 'positive') return 'Bullish — markets likely to react positively';
-  if (sentiment === 'negative') return 'Bearish — markets likely to react negatively';
-  return 'Neutral — monitoring for follow-up signals';
 }
 
 function getSymbol(symbol: string): string {
